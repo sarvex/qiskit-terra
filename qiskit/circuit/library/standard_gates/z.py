@@ -272,6 +272,4 @@ class CCZGate(ControlledGate):
         mat = _compute_control_matrix(
             self.base_gate.to_matrix(), self.num_ctrl_qubits, ctrl_state=self.ctrl_state
         )
-        if dtype is not None:
-            return numpy.asarray(mat, dtype=dtype)
-        return mat
+        return numpy.asarray(mat, dtype=dtype) if dtype is not None else mat

@@ -245,13 +245,13 @@ class MaximumLikelihoodAmplitudeEstimation(AmplitudeEstimator):
         if all(isinstance(data, (list, np.ndarray)) for data in result.circuit_results):
             interval = (result.estimation, result.estimation)
 
-        elif kind in ["likelihood_ratio", "lr"]:
+        elif kind in {"likelihood_ratio", "lr"}:
             interval = _likelihood_ratio_confint(result, alpha)
 
-        elif kind in ["fisher", "fi"]:
+        elif kind in {"fisher", "fi"}:
             interval = _fisher_confint(result, alpha, observed=False)
 
-        elif kind in ["observed_fisher", "observed_information", "oi"]:
+        elif kind in {"observed_fisher", "observed_information", "oi"}:
             interval = _fisher_confint(result, alpha, observed=True)
 
         if interval is None:
@@ -300,9 +300,7 @@ class MaximumLikelihoodAmplitudeEstimation(AmplitudeEstimator):
 
         est_theta = self._minimizer(loglikelihood, [search_range])
 
-        if return_counts:
-            return est_theta, good_counts
-        return est_theta
+        return (est_theta, good_counts) if return_counts else est_theta
 
     def estimate(
         self, estimation_problem: EstimationProblem
@@ -394,7 +392,7 @@ class MaximumLikelihoodAmplitudeEstimation(AmplitudeEstimator):
         result.estimation_processed = result.post_processing(result.estimation)
 
         result.fisher_information = _compute_fisher_information(result)
-        result.num_oracle_queries = result.shots * sum(k for k in result.evaluation_schedule)
+        result.num_oracle_queries = result.shots * sum(result.evaluation_schedule)
 
         # compute and store confidence interval
         confidence_interval = self.compute_confidence_interval(result, alpha=0.05, kind="fisher")
@@ -469,15 +467,11 @@ class MaximumLikelihoodAmplitudeEstimationResult(AmplitudeEstimatorResult):
 
 
 def _safe_min(array, default=0):
-    if len(array) == 0:
-        return default
-    return np.min(array)
+    return default if len(array) == 0 else np.min(array)
 
 
 def _safe_max(array, default=(np.pi / 2)):
-    if len(array) == 0:
-        return default
-    return np.max(array)
+    return default if len(array) == 0 else np.max(array)
 
 
 def _compute_fisher_information(

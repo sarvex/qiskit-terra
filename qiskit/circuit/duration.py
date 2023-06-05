@@ -58,11 +58,7 @@ def convert_durations_to_dt(qc: QuantumCircuit, dt_in_sec: float, inplace=True):
     Raises:
         CircuitError: if fail to convert durations.
     """
-    if inplace:
-        circ = qc
-    else:
-        circ = qc.copy()
-
+    circ = qc if inplace else qc.copy()
     for instruction in circ.data:
         operation = instruction.operation
         if operation.unit == "dt" or operation.duration is None:
@@ -82,7 +78,4 @@ def convert_durations_to_dt(qc: QuantumCircuit, dt_in_sec: float, inplace=True):
         circ.duration = duration_in_dt(circ.duration, dt_in_sec)
         circ.unit = "dt"
 
-    if not inplace:
-        return circ
-    else:
-        return None
+    return circ if not inplace else None

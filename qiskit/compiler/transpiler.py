@@ -295,11 +295,7 @@ def transpile(
         warnings.warn("Transpiling schedules is not supported yet.", UserWarning)
         end_time = time()
         _log_transpile_time(start_time, end_time)
-        if arg_circuits_list:
-            return circuits
-        else:
-            return circuits[0]
-
+        return circuits if arg_circuits_list else circuits[0]
     if optimization_level is None:
         # Take optimization level from the configuration or 1 as default.
         config = user_config.get_config()
@@ -383,10 +379,7 @@ def transpile(
     end_time = time()
     _log_transpile_time(start_time, end_time)
 
-    if arg_circuits_list:
-        return circuits
-    else:
-        return circuits[0]
+    return circuits if arg_circuits_list else circuits[0]
 
 
 def _check_circuits_coupling_map(circuits, cmap_conf, backend):
@@ -454,8 +447,7 @@ def _serial_transpile_circuit(
     callback,
     output_name,
 ):
-    result = pass_manager.run(circuit, callback=callback, output_name=output_name)
-    return result
+    return pass_manager.run(circuit, callback=callback, output_name=output_name)
 
 
 def _transpile_circuit(circuit_config_tuple: Tuple[QuantumCircuit, str, Dict]) -> QuantumCircuit:
@@ -481,11 +473,11 @@ def _transpile_circuit(circuit_config_tuple: Tuple[QuantumCircuit, str, Dict]) -
 
     transpile_config, pass_manager = _combine_args(shared_transpiler_args, unique_config)
 
-    result = pass_manager.run(
-        circuit, callback=transpile_config["callback"], output_name=transpile_config["output_name"]
+    return pass_manager.run(
+        circuit,
+        callback=transpile_config["callback"],
+        output_name=transpile_config["output_name"],
     )
-
-    return result
 
 
 def _parse_transpile_args(
@@ -819,8 +811,10 @@ def _parse_instruction_durations(backend, inst_durations, dt, circuits):
         if circ.calibrations:
             cal_durations = []
             for gate, gate_cals in circ.calibrations.items():
-                for (qubits, parameters), schedule in gate_cals.items():
-                    cal_durations.append((gate, qubits, parameters, schedule.duration))
+                cal_durations.extend(
+                    (gate, qubits, parameters, schedule.duration)
+                    for (qubits, parameters), schedule in gate_cals.items()
+                )
             circ_durations.update(cal_durations, circ_durations.dt)
 
         if inst_durations:
@@ -833,12 +827,11 @@ def _parse_instruction_durations(backend, inst_durations, dt, circuits):
 def _parse_approximation_degree(approximation_degree):
     if approximation_degree is None:
         return None
-    if not isinstance(approximation_degree, list):
-        if approximation_degree < 0.0 or approximation_degree > 1.0:
-            raise TranspilerError("Approximation degree must be in [0.0, 1.0]")
-    else:
+    if isinstance(approximation_degree, list):
         if not all(0.0 <= d <= 1.0 for d in approximation_degree if d):
             raise TranspilerError("Approximation degree must be in [0.0, 1.0]")
+    elif approximation_degree < 0.0 or approximation_degree > 1.0:
+        raise TranspilerError("Approximation degree must be in [0.0, 1.0]")
     return approximation_degree
 
 
@@ -858,37 +851,36 @@ def _parse_callback(callback, num_circuits):
 def _parse_output_name(output_name, circuits):
     # naming and returning circuits
     # output_name could be either a string or a list
-    if output_name is not None:
-        if isinstance(output_name, str):
-            # single circuit
-            if len(circuits) == 1:
-                return [output_name]
-            # multiple circuits
-            else:
-                raise TranspilerError(
-                    "Expected a list object of length equal "
-                    + "to that of the number of circuits "
-                    + "being transpiled"
-                )
-        elif isinstance(output_name, list):
-            if len(circuits) == len(output_name) and all(
-                isinstance(name, str) for name in output_name
-            ):
-                return output_name
-            else:
-                raise TranspilerError(
-                    "The length of output_name list "
-                    "must be equal to the number of "
-                    "transpiled circuits and the output_name "
-                    "list should be strings."
-                )
+    if output_name is None:
+        return [circuit.name for circuit in circuits]
+    if isinstance(output_name, str):
+        # single circuit
+        if len(circuits) == 1:
+            return [output_name]
+        # multiple circuits
         else:
             raise TranspilerError(
-                "The parameter output_name should be a string or a"
-                "list of strings: %s was used." % type(output_name)
+                "Expected a list object of length equal "
+                + "to that of the number of circuits "
+                + "being transpiled"
+            )
+    elif isinstance(output_name, list):
+        if len(circuits) == len(output_name) and all(
+            isinstance(name, str) for name in output_name
+        ):
+            return output_name
+        else:
+            raise TranspilerError(
+                "The length of output_name list "
+                "must be equal to the number of "
+                "transpiled circuits and the output_name "
+                "list should be strings."
             )
     else:
-        return [circuit.name for circuit in circuits]
+        raise TranspilerError(
+            "The parameter output_name should be a string or a"
+            "list of strings: %s was used." % type(output_name)
+        )
 
 
 def _parse_timing_constraints(backend, timing_constraints, num_circuits):

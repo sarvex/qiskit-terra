@@ -64,23 +64,21 @@ class AerPauliExpectation(ExpectationBase):
             else:
                 is_herm = operator.primitive.is_hermitian()
 
-            if not is_herm:
-                pauli_sum_re = (
-                    self._replace_pauli_sums(
-                        1 / 2 * (operator.primitive + operator.primitive.adjoint()).reduce()
-                    )
-                    * operator.coeff
+            if is_herm:
+                return self._replace_pauli_sums(operator.primitive) * operator.coeff
+            pauli_sum_re = (
+                self._replace_pauli_sums(
+                    1 / 2 * (operator.primitive + operator.primitive.adjoint()).reduce()
                 )
-                pauli_sum_im = (
-                    self._replace_pauli_sums(
-                        1 / 2j * (operator.primitive - operator.primitive.adjoint()).reduce()
-                    )
-                    * operator.coeff
+                * operator.coeff
+            )
+            pauli_sum_im = (
+                self._replace_pauli_sums(
+                    1 / 2j * (operator.primitive - operator.primitive.adjoint()).reduce()
                 )
-                pauli_sum = (pauli_sum_re + 1j * pauli_sum_im).reduce()
-            else:
-                pauli_sum = self._replace_pauli_sums(operator.primitive) * operator.coeff
-            return pauli_sum
+                * operator.coeff
+            )
+            return (pauli_sum_re + 1j * pauli_sum_im).reduce()
         elif isinstance(operator, ListOp):
             return operator.traverse(self.convert)
         else:

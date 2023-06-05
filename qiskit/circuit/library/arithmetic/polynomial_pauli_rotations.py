@@ -49,23 +49,20 @@ def _large_coefficients_iter(m, n):
     """
     if m < 2 * n or n == 1:
         coefficients = _multinomial_coefficients(m, n)
-        for key, value in coefficients.items():
-            yield (key, value)
+        yield from coefficients.items()
     else:
         coefficients = _multinomial_coefficients(n, n)
-        coefficients_dict = {}
-        for key, value in coefficients.items():
-            coefficients_dict[tuple(filter(None, key))] = value
+        coefficients_dict = {
+            tuple(filter(None, key)): value
+            for key, value in coefficients.items()
+        }
         coefficients = coefficients_dict
 
         temp = [n] + [0] * (m - 1)
         temp_a = tuple(temp)
         b = tuple(filter(None, temp_a))
         yield (temp_a, coefficients[b])
-        if n:
-            j = 0  # j will be the leftmost nonzero position
-        else:
-            j = m
+        j = 0 if n else m
         # enumerate tuples in co-lex order
         while j < m - 1:
             # compute next tuple
@@ -94,17 +91,12 @@ def _multinomial_coefficients(m, n):
     .. [#] https://github.com/sympy/sympy/blob/sympy-1.5.1/sympy/ntheory/multinomial.py
     """
     if not m:
-        if n:
-            return {}
-        return {(): 1}
+        return {} if n else {(): 1}
     if m == 2:
         return _binomial_coefficients(n)
     if m >= 2 * n and n > 1:
         return dict(_large_coefficients_iter(m, n))
-    if n:
-        j = 0
-    else:
-        j = m
+    j = 0 if n else m
     temp = [n] + [0] * (m - 1)
     res = {tuple(temp): 1}
     while j < m - 1:
@@ -220,9 +212,7 @@ class PolynomialPauliRotations(FunctionalPauliRotations):
         Returns:
             The degree of the polynomial. If the coefficients have not been set, return 0.
         """
-        if self.coeffs:
-            return len(self.coeffs) - 1
-        return 0
+        return len(self.coeffs) - 1 if self.coeffs else 0
 
     @property
     @deprecate_func(
@@ -258,8 +248,7 @@ class PolynomialPauliRotations(FunctionalPauliRotations):
             valid = False
             if raise_on_failure:
                 raise CircuitError(
-                    "Not enough qubits in the circuit, need at least "
-                    "{}.".format(self.num_state_qubits + 1)
+                    f"Not enough qubits in the circuit, need at least {self.num_state_qubits + 1}."
                 )
 
         return valid
@@ -273,11 +262,11 @@ class PolynomialPauliRotations(FunctionalPauliRotations):
         """
         # determine the control states
         all_combinations = list(product([0, 1], repeat=self.num_state_qubits))
-        valid_combinations = []
-        for combination in all_combinations:
-            if 0 < sum(combination) <= self.degree:
-                valid_combinations += [combination]
-
+        valid_combinations = [
+            combination
+            for combination in all_combinations
+            if 0 < sum(combination) <= self.degree
+        ]
         rotation_coeffs = {control_state: 0.0 for control_state in valid_combinations}
 
         # compute the coefficients for the control states
@@ -321,11 +310,7 @@ class PolynomialPauliRotations(FunctionalPauliRotations):
             circuit.rz(self.coeffs[0], qr_target)
 
         for c in rotation_coeffs:
-            qr_control = []
-            for i, _ in enumerate(c):
-                if c[i] > 0:
-                    qr_control.append(qr_state[i])
-
+            qr_control = [qr_state[i] for i, _ in enumerate(c) if c[i] > 0]
             # apply controlled rotations
             if len(qr_control) > 1:
                 if self.basis == "x":

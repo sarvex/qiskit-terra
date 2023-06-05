@@ -139,15 +139,15 @@ class NumPyEigensolver(Eigensolver):
         else:
             if self._k >= 2**operator.num_qubits - 1:
                 logger.debug("SciPy doesn't support to get all eigenvalues, using NumPy instead.")
-                if operator.is_hermitian():
-                    eigval, eigvec = np.linalg.eigh(operator.to_matrix())
-                else:
-                    eigval, eigvec = np.linalg.eig(operator.to_matrix())
+                eigval, eigvec = (
+                    np.linalg.eigh(operator.to_matrix())
+                    if operator.is_hermitian()
+                    else np.linalg.eig(operator.to_matrix())
+                )
+            elif operator.is_hermitian():
+                eigval, eigvec = scisparse.linalg.eigsh(sp_mat, k=self._k, which="SA")
             else:
-                if operator.is_hermitian():
-                    eigval, eigvec = scisparse.linalg.eigsh(sp_mat, k=self._k, which="SA")
-                else:
-                    eigval, eigvec = scisparse.linalg.eigs(sp_mat, k=self._k, which="SR")
+                eigval, eigvec = scisparse.linalg.eigs(sp_mat, k=self._k, which="SR")
             indices = np.argsort(eigval)[: self._k]
             eigval = eigval[indices]
             eigvec = eigvec[:, indices]
@@ -165,11 +165,10 @@ class NumPyEigensolver(Eigensolver):
             self._solve(operator)
 
         if aux_operators is not None:
-            aux_op_vals = []
-            for i in range(self._k):
-                aux_op_vals.append(
-                    self._eval_aux_operators(aux_operators, self._ret.eigenstates[i])
-                )
+            aux_op_vals = [
+                self._eval_aux_operators(aux_operators, self._ret.eigenstates[i])
+                for i in range(self._k)
+            ]
             self._ret.aux_operator_eigenvalues = aux_op_vals
 
     @staticmethod

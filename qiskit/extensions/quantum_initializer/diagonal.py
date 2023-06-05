@@ -147,7 +147,7 @@ def diagonal(self, diag, qubit):
     if not isinstance(diag, list):
         raise QiskitError("The diagonal entries are not provided in a list.")
     num_action_qubits = math.log2(len(diag))
-    if not len(qubit) == num_action_qubits:
+    if len(qubit) != num_action_qubits:
         raise QiskitError(
             "The number of diagonal entries does not correspond to the number of qubits."
         )

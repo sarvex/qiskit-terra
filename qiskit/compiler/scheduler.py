@@ -101,7 +101,4 @@ def schedule(
     schedules = parallel_map(schedule_circuit, circuits, (schedule_config, method))
     end_time = time()
     _log_schedule_time(start_time, end_time)
-    if arg_circuits_list:
-        return schedules
-    else:
-        return schedules[0]
+    return schedules if arg_circuits_list else schedules[0]

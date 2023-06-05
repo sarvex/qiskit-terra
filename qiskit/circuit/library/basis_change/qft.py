@@ -213,7 +213,7 @@ class QFT(BlueprintCircuit):
         if self.name in ("QFT", "IQFT"):
             name = "QFT" if self._inverse else "IQFT"
         else:
-            name = self.name + "_dg"
+            name = f"{self.name}_dg"
 
         inverted = self.copy(name=name)
 

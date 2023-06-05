@@ -86,13 +86,10 @@ def disassemble(qobj) -> Union[CircuitModule, PulseModule]:
 def _disassemble_circuit(qobj) -> CircuitModule:
     run_config = qobj.config.to_dict()
 
-    # convert lo freq back to Hz
-    qubit_lo_freq = run_config.get("qubit_lo_freq", [])
-    if qubit_lo_freq:
+    if qubit_lo_freq := run_config.get("qubit_lo_freq", []):
         run_config["qubit_lo_freq"] = [freq * 1e9 for freq in qubit_lo_freq]
 
-    meas_lo_freq = run_config.get("meas_lo_freq", [])
-    if meas_lo_freq:
+    if meas_lo_freq := run_config.get("meas_lo_freq", []):
         run_config["meas_lo_freq"] = [freq * 1e9 for freq in meas_lo_freq]
 
     user_qobj_header = qobj.header.to_dict()
@@ -109,7 +106,7 @@ def _qobj_to_circuit_cals(qobj, pulse_lib):
         config = (tuple(gate["qubits"]), tuple(gate["params"]))
         cal = {
             config: pulse.Schedule(
-                name="{} {} {}".format(gate["name"], str(gate["params"]), str(gate["qubits"]))
+                name=f'{gate["name"]} {str(gate["params"])} {str(gate["qubits"])}'
             )
         }
         for instruction in gate["instructions"]:
@@ -252,12 +249,10 @@ def _disassemble_pulse_schedule(qobj) -> PulseModule:
     run_config = qobj.config.to_dict()
     run_config.pop("pulse_library")
 
-    qubit_lo_freq = run_config.get("qubit_lo_freq")
-    if qubit_lo_freq:
+    if qubit_lo_freq := run_config.get("qubit_lo_freq"):
         run_config["qubit_lo_freq"] = [freq * 1e9 for freq in qubit_lo_freq]
 
-    meas_lo_freq = run_config.get("meas_lo_freq")
-    if meas_lo_freq:
+    if meas_lo_freq := run_config.get("meas_lo_freq"):
         run_config["meas_lo_freq"] = [freq * 1e9 for freq in meas_lo_freq]
 
     user_qobj_header = qobj.header.to_dict()
@@ -299,10 +294,7 @@ def _experiments_to_schedules(qobj) -> List[pulse.Schedule]:
 
     schedules = []
     for program in qobj.experiments:
-        insts = []
-        for inst in program.instructions:
-            insts.append(converter(inst))
-
+        insts = [converter(inst) for inst in program.instructions]
         schedule = pulse.Schedule(*insts)
         schedules.append(schedule)
     return schedules

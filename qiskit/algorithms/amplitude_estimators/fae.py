@@ -155,14 +155,14 @@ class FasterAmplitudeEstimation(AmplitudeEstimator):
                 shots = 1
             self._num_oracle_calls += (2 * k + 1) * shots
 
-            # sum over all probabilities where the objective qubits are 1
-            prob = 0
-            for bit, probabilities in result.quasi_dists[0].binary_probabilities().items():
-                # check if it is a good state
-                if estimation_problem.is_good_state(bit):
-                    prob += probabilities
-
-            cos_estimate = 1 - 2 * prob
+            prob = sum(
+                probabilities
+                for bit, probabilities in result.quasi_dists[0]
+                .binary_probabilities()
+                .items()
+                if estimation_problem.is_good_state(bit)
+            )
+            return 1 - 2 * prob
         elif self._quantum_instance.is_statevector:
             circuit = self.construct_circuit(estimation_problem, k, measurement=False)
             statevector = self._quantum_instance.execute(circuit).get_statevector()
@@ -178,7 +178,7 @@ class FasterAmplitudeEstimation(AmplitudeEstimator):
                 if estimation_problem.is_good_state(state[::-1]):
                     prob = prob + np.abs(amplitude) ** 2
 
-            cos_estimate = 1 - 2 * prob
+            return 1 - 2 * prob
         else:
             circuit = self.construct_circuit(estimation_problem, k, measurement=True)
 
@@ -186,19 +186,16 @@ class FasterAmplitudeEstimation(AmplitudeEstimator):
             counts = self._quantum_instance.execute(circuit).get_counts()
             self._num_oracle_calls += (2 * k + 1) * shots
 
-            good_counts = 0
-            for state, count in counts.items():
-                if estimation_problem.is_good_state(state):
-                    good_counts += count
-
-            cos_estimate = 1 - 2 * good_counts / shots
-
-        return cos_estimate
+            good_counts = sum(
+                count
+                for state, count in counts.items()
+                if estimation_problem.is_good_state(state)
+            )
+            return 1 - 2 * good_counts / shots
 
     def _chernoff(self, cos, shots) -> list[float]:
         width = np.sqrt(np.log(2 / self._delta) * 12 / shots)
-        confint = [np.maximum(-1, cos - width), np.minimum(1, cos + width)]
-        return confint
+        return [np.maximum(-1, cos - width), np.minimum(1, cos + width)]
 
     def construct_circuit(
         self, estimation_problem: EstimationProblem, k: int, measurement: bool = False

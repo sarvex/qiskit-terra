@@ -103,20 +103,21 @@ class EvolutionProblem:
         Raises:
             ValueError: If Hamiltonian parameters cannot be bound with data provided.
         """
-        if isinstance(self.hamiltonian, OperatorBase):
-            t_param_set = set()
-            if self.t_param is not None:
-                t_param_set.add(self.t_param)
-            hamiltonian_dict_param_set: set[Parameter] = set()
-            if self.param_value_dict is not None:
-                hamiltonian_dict_param_set = hamiltonian_dict_param_set.union(
-                    set(self.param_value_dict.keys())
-                )
-            params_set = t_param_set.union(hamiltonian_dict_param_set)
-            hamiltonian_param_set = set(self.hamiltonian.parameters)
+        if not isinstance(self.hamiltonian, OperatorBase):
+            return
+        t_param_set = set()
+        if self.t_param is not None:
+            t_param_set.add(self.t_param)
+        hamiltonian_dict_param_set: set[Parameter] = set()
+        if self.param_value_dict is not None:
+            hamiltonian_dict_param_set = hamiltonian_dict_param_set.union(
+                set(self.param_value_dict.keys())
+            )
+        params_set = t_param_set.union(hamiltonian_dict_param_set)
+        hamiltonian_param_set = set(self.hamiltonian.parameters)
 
-            if hamiltonian_param_set != params_set:
-                raise ValueError(
-                    f"Provided parameters {params_set} do not match Hamiltonian parameters "
-                    f"{hamiltonian_param_set}."
-                )
+        if hamiltonian_param_set != params_set:
+            raise ValueError(
+                f"Provided parameters {params_set} do not match Hamiltonian parameters "
+                f"{hamiltonian_param_set}."
+            )

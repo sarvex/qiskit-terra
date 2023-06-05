@@ -257,6 +257,4 @@ class CSwapGate(ControlledGate):
     def __array__(self, dtype=None):
         """Return a numpy.array for the Fredkin (CSWAP) gate."""
         mat = self._matrix1 if self.ctrl_state else self._matrix0
-        if dtype:
-            return numpy.asarray(mat, dtype=dtype)
-        return mat
+        return numpy.asarray(mat, dtype=dtype) if dtype else mat

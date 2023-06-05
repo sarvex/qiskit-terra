@@ -303,30 +303,26 @@ def _parse_common_args(
 
     max_shots = getattr(backend_config, "max_shots", None)
     if shots is None:
-        if max_shots:
-            shots = min(1024, max_shots)
-        else:
-            shots = 1024
+        shots = min(1024, max_shots) if max_shots else 1024
     elif not isinstance(shots, (int, np.integer)):
         raise QiskitError("Argument 'shots' should be of type 'int'")
     elif max_shots and max_shots < shots:
         raise QiskitError(
-            "Number of shots specified: %s exceeds max_shots property of the "
-            "backend: %s." % (shots, max_shots)
+            f"Number of shots specified: {shots} exceeds max_shots property of the backend: {max_shots}."
         )
 
-    dynamic_reprate_enabled = getattr(backend_config, "dynamic_reprate_enabled", False)
-    if dynamic_reprate_enabled:
+    if dynamic_reprate_enabled := getattr(
+        backend_config, "dynamic_reprate_enabled", False
+    ):
         default_rep_delay = getattr(backend_config, "default_rep_delay", None)
         rep_delay_range = getattr(backend_config, "rep_delay_range", None)
         rep_delay = _parse_rep_delay(rep_delay, default_rep_delay, rep_delay_range)
-    else:
-        if rep_delay is not None:
-            rep_delay = None
-            warnings.warn(
-                "Dynamic rep rates not supported on this backend, cannot use rep_delay.",
-                RuntimeWarning,
-            )
+    elif rep_delay is not None:
+        rep_delay = None
+        warnings.warn(
+            "Dynamic rep rates not supported on this backend, cannot use rep_delay.",
+            RuntimeWarning,
+        )
 
     qubit_lo_freq = qubit_lo_freq or getattr(backend_defaults, "qubit_freq_est", None)
     meas_lo_freq = meas_lo_freq or getattr(backend_defaults, "meas_freq_est", None)
@@ -397,9 +393,7 @@ def _check_lo_freqs(
                 raise QiskitError(f"Each element of {lo_type} LO range must be a 2d list.")
             if freq < freq_range[0] or freq > freq_range[1]:
                 raise QiskitError(
-                    "Qubit {} {} LO frequency is {}. The range is [{}, {}].".format(
-                        i, lo_type, freq, freq_range[0], freq_range[1]
-                    )
+                    f"Qubit {i} {lo_type} LO frequency is {freq}. The range is [{freq_range[0]}, {freq_range[1]}]."
                 )
 
 
@@ -429,9 +423,7 @@ def _parse_pulse_args(
 
         if meas_level not in getattr(backend_config, "meas_levels", [MeasLevel.CLASSIFIED]):
             raise QiskitError(
-                ("meas_level = {} not supported for backend {}, only {} is supported").format(
-                    meas_level, backend_config.backend_name, backend_config.meas_levels
-                )
+                f"meas_level = {meas_level} not supported for backend {backend_config.backend_name}, only {backend_config.meas_levels} is supported"
             )
 
     meas_map = meas_map or getattr(backend_config, "meas_map", None)
@@ -522,16 +514,13 @@ def _parse_rep_delay(
         if rep_delay_range is not None and isinstance(rep_delay_range, list):
             if len(rep_delay_range) != 2:
                 raise QiskitError(
-                    "Backend rep_delay_range {} must be a list with two entries.".format(
-                        rep_delay_range
-                    )
+                    f"Backend rep_delay_range {rep_delay_range} must be a list with two entries."
                 )
             if not rep_delay_range[0] <= rep_delay <= rep_delay_range[1]:
                 raise QiskitError(
-                    "Supplied rep delay {} not in the supported "
-                    "backend range {}".format(rep_delay, rep_delay_range)
+                    f"Supplied rep delay {rep_delay} not in the supported backend range {rep_delay_range}"
                 )
-        rep_delay = rep_delay * 1e6  # convert sec to μs
+        rep_delay *= 1e6
 
     return rep_delay
 

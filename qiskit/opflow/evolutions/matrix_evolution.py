@@ -52,7 +52,7 @@ class MatrixEvolution(EvolutionBase):
             The converted operator.
         """
         if isinstance(operator, EvolvedOp):
-            if not {"Matrix"} == operator.primitive_strings():
+            if {"Matrix"} != operator.primitive_strings():
                 logger.warning(
                     "Evolved Hamiltonian is not composed of only MatrixOps, converting "
                     "to Matrix representation, which can be expensive."

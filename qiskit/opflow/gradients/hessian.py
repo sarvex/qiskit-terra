@@ -148,7 +148,7 @@ class Hessian(HessianBase):
         if isinstance(params, ParameterExpression):
             return Gradient(grad_method=self._hess_method).get_gradient(operator, params)
 
-        if (not isinstance(params, tuple)) or (not len(params) == 2):
+        if not isinstance(params, tuple) or len(params) != 2:
             raise TypeError("Parameters supplied in unsupported format.")
 
         # By this point, it's only one parameter tuple
@@ -181,11 +181,7 @@ class Hessian(HessianBase):
             if not is_coeff_c(dd_coeff, 0):
                 grad_op += dd_coeff * op
 
-            if grad_op == 0:
-                return ~Zero @ One
-
-            return grad_op
-
+            return ~Zero @ One if grad_op == 0 else grad_op
         # Base Case, you've hit a ComposedOp!
         # Prior to execution, the composite operator was standardized and coefficients were
         # collected. Any operator measurements were converted to Pauli-Z measurements and rotation

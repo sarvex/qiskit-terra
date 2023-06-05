@@ -55,7 +55,7 @@ class MCGupDiag(Gate):
         self.num_ancillas_zero = num_ancillas_zero
         self.num_ancillas_dirty = num_ancillas_dirty
         # Check if the gate has the right dimension
-        if not gate.shape == (2, 2):
+        if gate.shape != (2, 2):
             raise QiskitError("The dimension of the controlled gate is not equal to (2,2).")
         # Check if the single-qubit gate is unitary
         if not is_isometry(gate, _EPS):
@@ -78,8 +78,8 @@ class MCGupDiag(Gate):
         Note that the resulting Gate object has an empty ``params`` property.
         """
         inverse_gate = Gate(
-            name=self.name + "_dg", num_qubits=self.num_qubits, params=[]
-        )  # removing the params because arrays are deprecated
+            name=f"{self.name}_dg", num_qubits=self.num_qubits, params=[]
+        )
 
         definition = QuantumCircuit(*self.definition.qregs)
         for inst in reversed(self._definition):
@@ -111,14 +111,14 @@ class MCGupDiag(Gate):
         threshold = float("inf")
         if self.num_controls < threshold:
             # Implement the MCG as a UCGate (up to diagonal)
-            gate_list = [np.eye(2, 2) for i in range(2**self.num_controls)]
+            gate_list = [np.eye(2, 2) for _ in range(2**self.num_controls)]
             gate_list[-1] = self.params[0]
             ucg = UCGate(gate_list, up_to_diagonal=True)
             circuit.append(ucg, [q_target] + q_controls)
             diag = ucg._get_diagonal()
-            # else:
-            # ToDo: Use the best decomposition for MCGs up to diagonal gates here
-            # ToDo: (with all available ancillas)
+                # else:
+                # ToDo: Use the best decomposition for MCGs up to diagonal gates here
+                # ToDo: (with all available ancillas)
         return circuit, diag
 
     def _define_qubit_role(self, q):

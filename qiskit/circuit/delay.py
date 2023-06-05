@@ -25,7 +25,7 @@ class Delay(Instruction):
     def __init__(self, duration, unit="dt"):
         """Create new delay instruction."""
         if unit not in {"s", "ms", "us", "ns", "ps", "dt"}:
-            raise CircuitError("Unknown unit %s is specified." % unit)
+            raise CircuitError(f"Unknown unit {unit} is specified.")
 
         super().__init__("delay", 1, 0, params=[duration], unit=unit)
 

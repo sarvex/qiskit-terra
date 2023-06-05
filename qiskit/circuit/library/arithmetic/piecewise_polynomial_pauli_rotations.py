@@ -114,9 +114,9 @@ class PiecewisePolynomialPauliRotations(FunctionalPauliRotations):
         # store a list of coefficients as homogeneous polynomials adding 0's where necessary
         self._hom_coeffs = []
         self._degree = len(max(self._coeffs, key=len)) - 1
-        for poly in self._coeffs:
-            self._hom_coeffs.append(poly + [0] * (self._degree + 1 - len(poly)))
-
+        self._hom_coeffs.extend(
+            poly + [0] * (self._degree + 1 - len(poly)) for poly in self._coeffs
+        )
         super().__init__(num_state_qubits=num_state_qubits, basis=basis, name=name)
 
     @property
@@ -170,12 +170,10 @@ class PiecewisePolynomialPauliRotations(FunctionalPauliRotations):
         self._invalidate()
         self._coeffs = coeffs
 
-        # update the homogeneous polynomials and degree
-        self._hom_coeffs = []
         self._degree = len(max(self._coeffs, key=len)) - 1
-        for poly in self._coeffs:
-            self._hom_coeffs.append(poly + [0] * (self._degree + 1 - len(poly)))
-
+        self._hom_coeffs = [
+            poly + [0] * (self._degree + 1 - len(poly)) for poly in self._coeffs
+        ]
         if self.num_state_qubits and coeffs:
             self._reset_registers(self.num_state_qubits)
 
@@ -187,10 +185,8 @@ class PiecewisePolynomialPauliRotations(FunctionalPauliRotations):
         Returns:
             The mapped coefficients.
         """
-        mapped_coeffs = []
+        mapped_coeffs = [self._hom_coeffs[0]]
 
-        # First polynomial
-        mapped_coeffs.append(self._hom_coeffs[0])
         for i in range(1, len(self._hom_coeffs)):
             mapped_coeffs.append([])
             for j in range(0, self._degree + 1):
@@ -236,8 +232,7 @@ class PiecewisePolynomialPauliRotations(FunctionalPauliRotations):
             valid = False
             if raise_on_failure:
                 raise CircuitError(
-                    "Not enough qubits in the circuit, need at least "
-                    "{}.".format(self.num_state_qubits + 1)
+                    f"Not enough qubits in the circuit, need at least {self.num_state_qubits + 1}."
                 )
 
         if len(self.breakpoints) != len(self.coeffs) + 1:

@@ -92,7 +92,7 @@ class VBERippleCarryAdder(Adder):
 
         registers += [qr_a, qr_b]
 
-        if kind in ["half", "full"]:
+        if kind in {"half", "full"}:
             qr_cout = QuantumRegister(1, name="cout")
             registers.append(qr_cout)
         else:
@@ -127,21 +127,21 @@ class VBERippleCarryAdder(Adder):
 
         # handle all cases for the first qubits, depending on whether cin is available
         i = 0
-        if kind == "half":
-            i += 1
-            circuit.ccx(qr_a[0], qr_b[0], carries[0])
-        elif kind == "fixed":
+        if kind == "fixed":
             i += 1
             if num_state_qubits == 1:
                 circuit.cx(qr_a[0], qr_b[0])
             else:
                 circuit.ccx(qr_a[0], qr_b[0], carries[0])
 
+        elif kind == "half":
+            i += 1
+            circuit.ccx(qr_a[0], qr_b[0], carries[0])
         for inp, out in zip(carries[:-1], carries[1:]):
             circuit.append(carry_gate, [inp, qr_a[i], qr_b[i], out])
             i += 1
 
-        if kind in ["full", "half"]:  # final CX (cancels for the 'fixed' case)
+        if kind in {"full", "half"}:  # final CX (cancels for the 'fixed' case)
             circuit.cx(qr_a[-1], qr_b[-1])
 
         if len(carries) > 1:
@@ -158,7 +158,7 @@ class VBERippleCarryAdder(Adder):
             circuit.append(sum_gate, [inp, qr_a[i], qr_b[i]])
             i -= 1
 
-        if kind in ["half", "fixed"] and num_state_qubits > 1:
+        if kind in {"half", "fixed"} and num_state_qubits > 1:
             circuit.ccx(qr_a[0], qr_b[0], carries[0])
             circuit.cx(qr_a[0], qr_b[0])
 

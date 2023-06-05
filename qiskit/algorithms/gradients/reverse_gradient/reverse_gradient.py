@@ -167,8 +167,7 @@ class ReverseEstimatorGradient(BaseEstimatorGradient):
             gradient = np.array(list(grads.values()))
             gradients.append(self._to_derivtype(gradient))
 
-        result = EstimatorGradientResult(gradients, metadata=metadata, options={})
-        return result
+        return EstimatorGradientResult(gradients, metadata=metadata, options={})
 
     def _to_derivtype(self, gradient):
         # this disable is needed as Pylint does not understand derivative_type is a property if

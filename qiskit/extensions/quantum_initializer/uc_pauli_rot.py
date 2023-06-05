@@ -67,7 +67,7 @@ class UCPauliRotGate(Gate):
             raise QiskitError("Rotation axis is not supported.")
         # Create new gate.
         num_qubits = int(num_contr) + 1
-        super().__init__("ucr" + rot_axis.lower(), num_qubits, angle_list)
+        super().__init__(f"ucr{rot_axis.lower()}", num_qubits, angle_list)
 
     def _define(self):
         ucr_circuit = self._dec_ucrot()
@@ -85,37 +85,26 @@ class UCPauliRotGate(Gate):
         q = QuantumRegister(self.num_qubits)
         circuit = QuantumCircuit(q)
         q_target = q[0]
-        q_controls = q[1:]
-        if not q_controls:  # equivalent to: if len(q_controls) == 0
-            if self.rot_axes == "X":
-                if np.abs(self.params[0]) > _EPS:
-                    circuit.rx(self.params[0], q_target)
-            if self.rot_axes == "Y":
-                if np.abs(self.params[0]) > _EPS:
-                    circuit.ry(self.params[0], q_target)
-            if self.rot_axes == "Z":
-                if np.abs(self.params[0]) > _EPS:
-                    circuit.rz(self.params[0], q_target)
-        else:
+        if q_controls := q[1:]:
             # First, we find the rotation angles of the single-qubit rotations acting
             #  on the target qubit
             angles = self.params.copy()
             UCPauliRotGate._dec_uc_rotations(angles, 0, len(angles), False)
             # Now, it is easy to place the C-NOT gates to get back the full decomposition.
-            for (i, angle) in enumerate(angles):
-                if self.rot_axes == "X":
-                    if np.abs(angle) > _EPS:
+            for i, angle in enumerate(angles):
+                if np.abs(angle) > _EPS:
+                    if self.rot_axes == "X":
                         circuit.rx(angle, q_target)
-                if self.rot_axes == "Y":
-                    if np.abs(angle) > _EPS:
+                if np.abs(angle) > _EPS:
+                    if self.rot_axes == "Y":
                         circuit.ry(angle, q_target)
-                if self.rot_axes == "Z":
-                    if np.abs(angle) > _EPS:
+                if np.abs(angle) > _EPS:
+                    if self.rot_axes == "Z":
                         circuit.rz(angle, q_target)
                 # Determine the index of the qubit we want to control the C-NOT gate.
                 # Note that it corresponds
                 # to the number of trailing zeros in the binary representation of i+1
-                if not i == len(angles) - 1:
+                if i != len(angles) - 1:
                     binary_rep = np.binary_repr(i + 1)
                     q_contr_index = len(binary_rep) - len(binary_rep.rstrip("0"))
                 else:
@@ -130,6 +119,16 @@ class UCPauliRotGate(Gate):
                 circuit.cx(q_controls[q_contr_index], q_target)
                 if self.rot_axes == "X":
                     circuit.ry(-np.pi / 2, q_target)
+        else:
+            if np.abs(self.params[0]) > _EPS:
+                if self.rot_axes == "X":
+                    circuit.rx(self.params[0], q_target)
+            if np.abs(self.params[0]) > _EPS:
+                if self.rot_axes == "Y":
+                    circuit.ry(self.params[0], q_target)
+            if np.abs(self.params[0]) > _EPS:
+                if self.rot_axes == "Z":
+                    circuit.rz(self.params[0], q_target)
         return circuit
 
     @staticmethod
@@ -153,13 +152,12 @@ class UCPauliRotGate(Gate):
                 )
         if interval_len_half <= 1:
             return
-        else:
-            UCPauliRotGate._dec_uc_rotations(
-                angles, start_index, start_index + interval_len_half, False
-            )
-            UCPauliRotGate._dec_uc_rotations(
-                angles, start_index + interval_len_half, end_index, True
-            )
+        UCPauliRotGate._dec_uc_rotations(
+            angles, start_index, start_index + interval_len_half, False
+        )
+        UCPauliRotGate._dec_uc_rotations(
+            angles, start_index + interval_len_half, end_index, True
+        )
 
     @staticmethod
     def _update_angles(angle1, angle2):

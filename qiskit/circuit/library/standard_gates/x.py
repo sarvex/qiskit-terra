@@ -406,9 +406,7 @@ class CCXGate(ControlledGate):
         mat = _compute_control_matrix(
             self.base_gate.to_matrix(), self.num_ctrl_qubits, ctrl_state=self.ctrl_state
         )
-        if dtype:
-            return numpy.asarray(mat, dtype=dtype)
-        return mat
+        return numpy.asarray(mat, dtype=dtype) if dtype else mat
 
 
 class RCCXGate(Gate):
@@ -704,9 +702,7 @@ class C3XGate(ControlledGate):
         mat = _compute_control_matrix(
             self.base_gate.to_matrix(), self.num_ctrl_qubits, ctrl_state=self.ctrl_state
         )
-        if dtype:
-            return numpy.asarray(mat, dtype=dtype)
-        return mat
+        return numpy.asarray(mat, dtype=dtype) if dtype else mat
 
 
 class RC3XGate(Gate):
@@ -904,9 +900,7 @@ class C4XGate(ControlledGate):
         mat = _compute_control_matrix(
             self.base_gate.to_matrix(), self.num_ctrl_qubits, ctrl_state=self.ctrl_state
         )
-        if dtype:
-            return numpy.asarray(mat, dtype=dtype)
-        return mat
+        return numpy.asarray(mat, dtype=dtype) if dtype else mat
 
 
 class MCXGate(ControlledGate):
@@ -970,9 +964,9 @@ class MCXGate(ControlledGate):
         """
         if mode == "noancilla":
             return 0
-        if mode in ["recursion", "advanced"]:
+        if mode in {"recursion", "advanced"}:
             return int(num_ctrl_qubits > 4)
-        if mode[:7] == "v-chain" or mode[:5] == "basic":
+        if mode.startswith("v-chain") or mode.startswith("basic"):
             return max(0, num_ctrl_qubits - 2)
         raise AttributeError(f"Unsupported mode ({mode}) specified!")
 
@@ -1101,14 +1095,13 @@ class MCXRecursive(MCXGate):
         qc = QuantumCircuit(q, name=self.name)
         if self.num_qubits == 4:
             qc._append(C3XGate(), q[:], [])
-            self.definition = qc
         elif self.num_qubits == 5:
             qc._append(C4XGate(), q[:], [])
-            self.definition = qc
         else:
             for instr, qargs, cargs in self._recurse(q[:-1], q_ancilla=q[-1]):
                 qc._append(instr, qargs, cargs)
-            self.definition = qc
+
+        self.definition = qc
 
     def _recurse(self, q, q_ancilla=None):
         # recursion stop
@@ -1199,9 +1192,7 @@ class MCXVChain(MCXGate):
                 (CXGate(), [q_controls[-1], q_ancillas[i]], []),
                 (U1Gate(numpy.pi / 4), [q_ancillas[i]], []),
             ]
-            for inst in ancilla_pre_rule:
-                definition.append(inst)
-
+            definition.extend(iter(ancilla_pre_rule))
             for j in reversed(range(2, self.num_ctrl_qubits - 1)):
                 definition.append(
                     (RCCXGate(), [q_controls[j], q_ancillas[i - 1], q_ancillas[i]], [])
@@ -1226,8 +1217,7 @@ class MCXVChain(MCXGate):
                 (CXGate(), [q_target, q_ancillas[i]], []),
                 (U2Gate(0, numpy.pi), [q_target], []),
             ]
-            for inst in ancilla_post_rule:
-                definition.append(inst)
+            definition.extend(iter(ancilla_post_rule))
         else:
             definition.append((CCXGate(), [q_controls[-1], q_ancillas[i], q_target], []))
 
@@ -1237,11 +1227,10 @@ class MCXVChain(MCXGate):
         definition.append((RCCXGate(), [q_controls[0], q_controls[1], q_ancillas[i]], []))
 
         if self._dirty_ancillas:
-            for i, j in enumerate(list(range(2, self.num_ctrl_qubits - 1))):
-                definition.append(
-                    (RCCXGate(), [q_controls[j], q_ancillas[i], q_ancillas[i + 1]], [])
-                )
-
+            definition.extend(
+                (RCCXGate(), [q_controls[j], q_ancillas[i], q_ancillas[i + 1]], [])
+                for i, j in enumerate(list(range(2, self.num_ctrl_qubits - 1)))
+            )
         for instr, qargs, cargs in definition:
             qc._append(instr, qargs, cargs)
         self.definition = qc

@@ -304,7 +304,7 @@ class TwoLocal(NLocal):
             return circuit
 
         raise TypeError(
-            f"Invalid input type {type(layer)}. " + "`layer` must be a type, str or QuantumCircuit."
+            f"Invalid input type {type(layer)}. `layer` must be a type, str or QuantumCircuit."
         )
 
     def get_entangler_map(

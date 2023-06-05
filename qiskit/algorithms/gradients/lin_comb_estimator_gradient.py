@@ -136,9 +136,7 @@ class LinCombEstimatorGradient(BaseEstimatorGradient):
                     circuit, add_measurement=False
                 )
             lin_comb_circuits = self._lin_comb_cache[circuit_key]
-            gradient_circuits = []
-            for param in parameters_:
-                gradient_circuits.append(lin_comb_circuits[param])
+            gradient_circuits = [lin_comb_circuits[param] for param in parameters_]
             n = len(gradient_circuits)
             # Make the observable as :class:`~qiskit.quantum_info.SparsePauliOp` and
             # add an ancillary operator to compute the gradient.

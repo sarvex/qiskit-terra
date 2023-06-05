@@ -23,11 +23,7 @@ class ParameterVectorElement(Parameter):
     def __new__(cls, vector, index, uuid=None):  # pylint:disable=unused-argument
         obj = object.__new__(cls)
 
-        if uuid is None:
-            obj._uuid = uuid4()
-        else:
-            obj._uuid = uuid
-
+        obj._uuid = uuid4() if uuid is None else uuid
         obj._hash = hash(obj._uuid)
         return obj
 

@@ -143,10 +143,9 @@ class RealMcLachlanPrinciple(RealVariationalPrinciple):
         Returns:
             A modified Hamiltonian.
         """
-        energy_term = SparsePauliOp.from_list(
+        return SparsePauliOp.from_list(
             hamiltonian.to_list() + [("I" * hamiltonian.num_qubits, -energy)]
         )
-        return energy_term
 
     @staticmethod
     def _validate_grad_settings(gradient):

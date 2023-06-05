@@ -126,7 +126,7 @@ class PauliTrotterEvolution(EvolutionBase):
                 )
                 return CircuitOp(evo)
                 # operator = EvolvedOp(operator.primitive.to_pauli_op(), coeff=operator.coeff)
-            if not {"Pauli"} == operator.primitive_strings():
+            if {"Pauli"} != operator.primitive_strings():
                 logger.warning(
                     "Evolved Hamiltonian is not composed of only Paulis, converting to "
                     "Pauli representation, which can be expensive."

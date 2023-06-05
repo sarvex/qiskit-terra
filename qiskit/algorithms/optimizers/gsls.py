@@ -166,7 +166,6 @@ class GSLS(Optimizer):
 
         # Initialize counters and data
         iter_count = 0
-        n_evals = 0
         prev_iter_successful = True
         prev_directions, prev_sample_set_x, prev_sample_set_y = None, None, None
         consecutive_fail_iter = 0
@@ -177,7 +176,7 @@ class GSLS(Optimizer):
         # Initial point
         x = initial_point
         x_value = obj_fun(x)
-        n_evals += 1
+        n_evals = 0 + 1
         while iter_count < self._options["maxiter"] and n_evals < self._options["max_eval"]:
 
             # Determine set of sample points
@@ -293,53 +292,51 @@ class GSLS(Optimizer):
         # Generate points uniformly on the sphere
         points, directions = self.sample_points(n, x, num_points)
 
-        # Check bounds
         if (points >= var_lb).all() and (points <= var_ub).all():
             # If all points are within bounds, return them
             return directions, (x + self._options["sampling_radius"] * directions)
-        else:
-            # Otherwise we perform rejection sampling until we have
-            # enough points that satisfy the bounds
-            indices = np.where((points >= var_lb).all(axis=1) & (points <= var_ub).all(axis=1))[0]
-            accepted = directions[indices]
-            num_trials = 0
+        # Otherwise we perform rejection sampling until we have
+        # enough points that satisfy the bounds
+        indices = np.where((points >= var_lb).all(axis=1) & (points <= var_ub).all(axis=1))[0]
+        accepted = directions[indices]
+        num_trials = 0
 
-            while (
-                len(accepted) < num_points
-                and num_trials < self._options["max_failed_rejection_sampling"]
-            ):
-                # Generate points uniformly on the sphere
-                points, directions = self.sample_points(n, x, num_points)
-                indices = np.where((points >= var_lb).all(axis=1) & (points <= var_ub).all(axis=1))[
-                    0
-                ]
-                accepted = np.vstack((accepted, directions[indices]))
-                num_trials += 1
+        while (
+            len(accepted) < num_points
+            and num_trials < self._options["max_failed_rejection_sampling"]
+        ):
+            # Generate points uniformly on the sphere
+            points, directions = self.sample_points(n, x, num_points)
+            indices = np.where((points >= var_lb).all(axis=1) & (points <= var_ub).all(axis=1))[
+                0
+            ]
+            accepted = np.vstack((accepted, directions[indices]))
+            num_trials += 1
 
-            # When we are at a corner point, the expected fraction of acceptable points may be
-            # exponential small in the dimension of the problem. Thus, if we keep failing and
-            # do not have enough points by now, we switch to a different method that guarantees
-            # finding enough points, but they may not be uniformly distributed.
-            if len(accepted) < num_points:
-                points, directions = self.sample_points(n, x, num_points)
-                to_be_flipped = (points < var_lb) | (points > var_ub)
-                directions *= np.where(to_be_flipped, -1, 1)
-                points = x + self._options["sampling_radius"] * directions
-                indices = np.where((points >= var_lb).all(axis=1) & (points <= var_ub).all(axis=1))[
-                    0
-                ]
-                accepted = np.vstack((accepted, directions[indices]))
+        # When we are at a corner point, the expected fraction of acceptable points may be
+        # exponential small in the dimension of the problem. Thus, if we keep failing and
+        # do not have enough points by now, we switch to a different method that guarantees
+        # finding enough points, but they may not be uniformly distributed.
+        if len(accepted) < num_points:
+            points, directions = self.sample_points(n, x, num_points)
+            to_be_flipped = (points < var_lb) | (points > var_ub)
+            directions *= np.where(to_be_flipped, -1, 1)
+            points = x + self._options["sampling_radius"] * directions
+            indices = np.where((points >= var_lb).all(axis=1) & (points <= var_ub).all(axis=1))[
+                0
+            ]
+            accepted = np.vstack((accepted, directions[indices]))
 
-            # If we still do not have enough sampling points, we have failed.
-            if len(accepted) < num_points:
-                raise RuntimeError(
-                    "Could not generate enough samples within bounds; try smaller radius."
-                )
-
-            return (
-                accepted[:num_points],
-                x + self._options["sampling_radius"] * accepted[:num_points],
+        # If we still do not have enough sampling points, we have failed.
+        if len(accepted) < num_points:
+            raise RuntimeError(
+                "Could not generate enough samples within bounds; try smaller radius."
             )
+
+        return (
+            accepted[:num_points],
+            x + self._options["sampling_radius"] * accepted[:num_points],
+        )
 
     def gradient_approximation(
         self,
@@ -364,11 +361,13 @@ class GSLS(Optimizer):
             Gradient approximation at x, as a 1D array.
         """
         ffd = sample_set_y - x_value
-        gradient = (
+        return (
             float(n)
             / len(sample_set_y)
             * np.sum(
-                ffd.reshape(len(sample_set_y), 1) / self._options["sampling_radius"] * directions, 0
+                ffd.reshape(len(sample_set_y), 1)
+                / self._options["sampling_radius"]
+                * directions,
+                0,
             )
         )
-        return gradient

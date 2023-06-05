@@ -161,8 +161,7 @@ class PauliFeatureMap(NLocal):
         self, rep: int, block: int, indices: List[int]
     ) -> Optional[List[Parameter]]:
         """If certain blocks should use certain parameters this method can be overriden."""
-        params = [self.ordered_parameters[i] for i in indices]
-        return params
+        return [self.ordered_parameters[i] for i in indices]
 
     @property
     def num_parameters_settable(self):
@@ -292,5 +291,4 @@ def self_product(x: np.ndarray) -> float:
     Returns:
         float: the mapped value
     """
-    coeff = x[0] if len(x) == 1 else reduce(lambda m, n: m * n, np.pi - x)
-    return coeff
+    return x[0] if len(x) == 1 else reduce(lambda m, n: m * n, np.pi - x)

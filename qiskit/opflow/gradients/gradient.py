@@ -70,10 +70,11 @@ class Gradient(GradientBase):
             params = sorted(operator.parameters, key=functools.cmp_to_key(_compare_parameters))
         if isinstance(params, (ParameterVector, list)):
             param_grads = [self.convert(operator, param) for param in params]
-            absent_params = [
-                params[i] for i, grad_ops in enumerate(param_grads) if grad_ops is None
-            ]
-            if len(absent_params) > 0:
+            if absent_params := [
+                params[i]
+                for i, grad_ops in enumerate(param_grads)
+                if grad_ops is None
+            ]:
                 raise ValueError(
                     "The following parameters do not appear in the provided operator: ",
                     absent_params,
@@ -131,7 +132,7 @@ class Gradient(GradientBase):
             absent_params = [
                 params[i] for i, grad_ops in enumerate(param_grads) if grad_ops is None
             ]
-            if len(absent_params) > 0:
+            if absent_params:
                 raise ValueError(
                     "The following parameters do not appear in the provided operator: ",
                     absent_params,

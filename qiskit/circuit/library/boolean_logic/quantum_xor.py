@@ -54,13 +54,12 @@ class XOR(QuantumCircuit):
         """
         circuit = QuantumCircuit(num_qubits, name="xor")
 
-        if amount is not None:
-            if len(bin(amount)[2:]) > num_qubits:
-                raise CircuitError("Bits in 'amount' exceed circuit width")
-        else:
+        if amount is None:
             rng = np.random.default_rng(seed)
             amount = rng.integers(0, 2**num_qubits)
 
+        elif len(bin(amount)[2:]) > num_qubits:
+            raise CircuitError("Bits in 'amount' exceed circuit width")
         for i in range(num_qubits):
             bit = amount & 1
             amount = amount >> 1

@@ -46,7 +46,7 @@ class DAGNode:
     def __str__(self):
         # TODO is this used anywhere other than in DAG drawing?
         # needs to be unique as it is what pydot uses to distinguish nodes
-        return str(id(self))
+        return id(self)
 
     @staticmethod
     def semantic_eq(node1, node2, bit_indices1=None, bit_indices2=None):

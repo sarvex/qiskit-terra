@@ -196,8 +196,9 @@ class AdaptVQE(VariationalAlgorithm, MinimumEigensolver):
         # The excitations operators are applied later as exp(i*theta*excitation).
         # For this commutator, we need to explicitly pull in the imaginary phase.
         commutators = [1j * (operator @ exc - exc @ operator) for exc in self._excitation_pool]
-        res = estimate_observables(self.solver.estimator, self.solver.ansatz, commutators, theta)
-        return res
+        return estimate_observables(
+            self.solver.estimator, self.solver.ansatz, commutators, theta
+        )
 
     @staticmethod
     def _check_cyclicity(indices: list[int]) -> bool:

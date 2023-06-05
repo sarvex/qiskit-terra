@@ -44,7 +44,7 @@ class Clbit(Bit):
             super().__init__(register, index)
         else:
             raise CircuitError(
-                "Clbit needs a ClassicalRegister and %s was provided" % type(register).__name__
+                f"Clbit needs a ClassicalRegister and {type(register).__name__} was provided"
             )
 
 

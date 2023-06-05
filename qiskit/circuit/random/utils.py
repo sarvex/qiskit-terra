@@ -55,7 +55,7 @@ def random_circuit(
         return QuantumCircuit()
     if max_operands < 1 or max_operands > 4:
         raise CircuitError("max_operands must be between 1 and 4")
-    max_operands = max_operands if num_qubits > max_operands else num_qubits
+    max_operands = min(num_qubits, max_operands)
 
     gates_1q = [
         # (Gate class, number of qubits, number of parameters)
@@ -82,49 +82,49 @@ def random_circuit(
     ]
     if reset:
         gates_1q.append((Reset, 1, 0))
-    gates_2q = [
-        (standard_gates.CXGate, 2, 0),
-        (standard_gates.DCXGate, 2, 0),
-        (standard_gates.CHGate, 2, 0),
-        (standard_gates.CPhaseGate, 2, 1),
-        (standard_gates.CRXGate, 2, 1),
-        (standard_gates.CRYGate, 2, 1),
-        (standard_gates.CRZGate, 2, 1),
-        (standard_gates.CSXGate, 2, 0),
-        (standard_gates.CUGate, 2, 4),
-        (standard_gates.CU1Gate, 2, 1),
-        (standard_gates.CU3Gate, 2, 3),
-        (standard_gates.CYGate, 2, 0),
-        (standard_gates.CZGate, 2, 0),
-        (standard_gates.RXXGate, 2, 1),
-        (standard_gates.RYYGate, 2, 1),
-        (standard_gates.RZZGate, 2, 1),
-        (standard_gates.RZXGate, 2, 1),
-        (standard_gates.XXMinusYYGate, 2, 2),
-        (standard_gates.XXPlusYYGate, 2, 2),
-        (standard_gates.ECRGate, 2, 0),
-        (standard_gates.CSGate, 2, 0),
-        (standard_gates.CSdgGate, 2, 0),
-        (standard_gates.SwapGate, 2, 0),
-        (standard_gates.iSwapGate, 2, 0),
-    ]
-    gates_3q = [
-        (standard_gates.CCXGate, 3, 0),
-        (standard_gates.CSwapGate, 3, 0),
-        (standard_gates.CCZGate, 3, 0),
-        (standard_gates.RCCXGate, 3, 0),
-    ]
-    gates_4q = [
-        (standard_gates.C3SXGate, 4, 0),
-        (standard_gates.RC3XGate, 4, 0),
-    ]
-
     gates = gates_1q.copy()
     if max_operands >= 2:
+        gates_2q = [
+            (standard_gates.CXGate, 2, 0),
+            (standard_gates.DCXGate, 2, 0),
+            (standard_gates.CHGate, 2, 0),
+            (standard_gates.CPhaseGate, 2, 1),
+            (standard_gates.CRXGate, 2, 1),
+            (standard_gates.CRYGate, 2, 1),
+            (standard_gates.CRZGate, 2, 1),
+            (standard_gates.CSXGate, 2, 0),
+            (standard_gates.CUGate, 2, 4),
+            (standard_gates.CU1Gate, 2, 1),
+            (standard_gates.CU3Gate, 2, 3),
+            (standard_gates.CYGate, 2, 0),
+            (standard_gates.CZGate, 2, 0),
+            (standard_gates.RXXGate, 2, 1),
+            (standard_gates.RYYGate, 2, 1),
+            (standard_gates.RZZGate, 2, 1),
+            (standard_gates.RZXGate, 2, 1),
+            (standard_gates.XXMinusYYGate, 2, 2),
+            (standard_gates.XXPlusYYGate, 2, 2),
+            (standard_gates.ECRGate, 2, 0),
+            (standard_gates.CSGate, 2, 0),
+            (standard_gates.CSdgGate, 2, 0),
+            (standard_gates.SwapGate, 2, 0),
+            (standard_gates.iSwapGate, 2, 0),
+        ]
         gates.extend(gates_2q)
     if max_operands >= 3:
+        gates_3q = [
+            (standard_gates.CCXGate, 3, 0),
+            (standard_gates.CSwapGate, 3, 0),
+            (standard_gates.CCZGate, 3, 0),
+            (standard_gates.RCCXGate, 3, 0),
+        ]
         gates.extend(gates_3q)
     if max_operands >= 4:
+        gates_4q = [
+            (standard_gates.C3SXGate, 4, 0),
+            (standard_gates.RC3XGate, 4, 0),
+        ]
+
         gates.extend(gates_4q)
     gates = np.array(
         gates, dtype=[("class", object), ("num_qubits", np.int64), ("num_params", np.int64)]
@@ -157,8 +157,7 @@ def random_circuit(
         # it with 1q gates.
         max_index = np.searchsorted(cumulative_qubits, num_qubits, side="right")
         gate_specs = gate_specs[:max_index]
-        slack = num_qubits - cumulative_qubits[max_index - 1]
-        if slack:
+        if slack := num_qubits - cumulative_qubits[max_index - 1]:
             gate_specs = np.hstack((gate_specs, rng.choice(gates_1q, size=slack)))
 
         # For efficiency in the Python loop, this uses Numpy vectorisation to pre-calculate the

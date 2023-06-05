@@ -224,10 +224,7 @@ class Isometry(Instruction):
     def _find_squs_for_disentangling(self, v, k, s):
         k_prime = 0
         n = int(np.log2(self.iso_data.shape[0]))
-        if _b(k, s + 1) == 0:
-            i_start = _a(k, s + 1)
-        else:
-            i_start = _a(k, s + 1) + 1
+        i_start = _a(k, s + 1) if _b(k, s + 1) == 0 else _a(k, s + 1) + 1
         id_list = [np.eye(2, 2) for _ in range(i_start)]
         squs = [
             _reverse_qubit_state(
@@ -330,11 +327,17 @@ def _reverse_qubit_state(state, basis_state, epsilon):
     r = np.linalg.norm(state)
     if r < epsilon:
         return np.eye(2, 2)
-    if basis_state == 0:
-        m = np.array([[np.conj(state[0]), np.conj(state[1])], [-state[1], state[0]]]) / r
-    else:
-        m = np.array([[-state[1], state[0]], [np.conj(state[0]), np.conj(state[1])]]) / r
-    return m
+    return (
+        np.array(
+            [[np.conj(state[0]), np.conj(state[1])], [-state[1], state[0]]]
+        )
+        / r
+        if basis_state == 0
+        else np.array(
+            [[-state[1], state[0]], [np.conj(state[0]), np.conj(state[1])]]
+        )
+        / r
+    )
 
 
 # Methods for applying gates to matrices (should be moved to Qiskit AER)
@@ -493,8 +496,7 @@ def _get_binary_rep_as_list(n, num_digits):
     binary_string = np.binary_repr(n).zfill(num_digits)
     binary = []
     for line in binary_string:
-        for c in line:
-            binary.append(int(c))
+        binary.extend(int(c) for c in line)
     return binary[-num_digits:]
 
 
@@ -529,9 +531,8 @@ def _b(k, s):
 def _k_s(k, s):
     if k == 0:
         return 0
-    else:
-        num_digits = s + 1
-        return _get_binary_rep_as_list(k, num_digits)[0]
+    num_digits = s + 1
+    return _get_binary_rep_as_list(k, num_digits)[0]
 
 
 # Check if a gate of a special form is equal to the identity gate up to global phase
@@ -542,10 +543,10 @@ def _ucg_is_identity_up_to_global_phase(single_qubit_gates, epsilon):
         global_phase = 1.0 / (single_qubit_gates[0][0, 0])
     else:
         return False
-    for gate in single_qubit_gates:
-        if not np.allclose(global_phase * gate, np.eye(2, 2)):
-            return False
-    return True
+    return all(
+        np.allclose(global_phase * gate, np.eye(2, 2))
+        for gate in single_qubit_gates
+    )
 
 
 def _diag_is_identity_up_to_global_phase(diag, epsilon):
@@ -553,10 +554,7 @@ def _diag_is_identity_up_to_global_phase(diag, epsilon):
         global_phase = 1.0 / (diag[0])
     else:
         return False
-    for d in diag:
-        if not np.abs(global_phase * d - 1) < epsilon:
-            return False
-    return True
+    return all(np.abs(global_phase * d - 1) < epsilon for d in diag)
 
 
 def iso(

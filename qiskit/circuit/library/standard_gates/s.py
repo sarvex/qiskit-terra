@@ -216,9 +216,7 @@ class CSGate(ControlledGate):
     def __array__(self, dtype=None):
         """Return a numpy.array for the CS gate."""
         mat = self._matrix1 if self.ctrl_state == 1 else self._matrix0
-        if dtype is not None:
-            return numpy.asarray(mat, dtype=dtype)
-        return mat
+        return numpy.asarray(mat, dtype=dtype) if dtype is not None else mat
 
     def power(self, exponent: float):
         """Raise gate to a power."""
@@ -296,9 +294,7 @@ class CSdgGate(ControlledGate):
     def __array__(self, dtype=None):
         """Return a numpy.array for the CSdg gate."""
         mat = self._matrix1 if self.ctrl_state == 1 else self._matrix0
-        if dtype is not None:
-            return numpy.asarray(mat, dtype=dtype)
-        return mat
+        return numpy.asarray(mat, dtype=dtype) if dtype is not None else mat
 
     def power(self, exponent: float):
         """Raise gate to a power."""

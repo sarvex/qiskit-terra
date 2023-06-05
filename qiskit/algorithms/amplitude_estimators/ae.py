@@ -334,10 +334,7 @@ class AmplitudeEstimation(AmplitudeEstimator):
                 a_opt = locmax
                 loglik_opt = val
 
-        if apply_post_processing:
-            return result.post_processing(a_opt)
-
-        return a_opt
+        return result.post_processing(a_opt) if apply_post_processing else a_opt
 
     def estimate(self, estimation_problem: EstimationProblem) -> "AmplitudeEstimationResult":
         """Run the amplitude estimation algorithm on provided estimation problem.
@@ -465,13 +462,13 @@ class AmplitudeEstimation(AmplitudeEstimator):
         if isinstance(result.circuit_results, (list, np.ndarray)):
             return (result.mle, result.mle)
 
-        if kind in ["likelihood_ratio", "lr"]:
+        if kind in {"likelihood_ratio", "lr"}:
             return _likelihood_ratio_confint(result, alpha)
 
-        if kind in ["fisher", "fi"]:
+        if kind in {"fisher", "fi"}:
             return _fisher_confint(result, alpha, observed=False)
 
-        if kind in ["observed_fisher", "observed_information", "oi"]:
+        if kind in {"observed_fisher", "observed_information", "oi"}:
             return _fisher_confint(result, alpha, observed=True)
 
         raise NotImplementedError(f"CI `{kind}` is not implemented.")

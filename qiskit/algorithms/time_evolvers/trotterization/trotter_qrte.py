@@ -196,8 +196,7 @@ class TrotterQRTE(RealTimeEvolver):
         evolved_state.append(initial_state, evolved_state.qubits)
 
         if evolution_problem.aux_operators is not None:
-            observables = []
-            observables.append(
+            observables = [
                 estimate_observables(
                     self.estimator,
                     evolved_state,
@@ -205,7 +204,7 @@ class TrotterQRTE(RealTimeEvolver):
                     None,
                     evolution_problem.truncation_threshold,
                 )
-            )
+            ]
         else:
             observables = None
 

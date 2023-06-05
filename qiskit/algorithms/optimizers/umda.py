@@ -203,8 +203,7 @@ class UMDA(Optimizer):
 
         for i in range(self._n_variables):
             self._vector[0, i], self._vector[1, i] = norm.fit(self._generation[:, i])
-            if self._vector[1, i] < self.STD_BOUND:
-                self._vector[1, i] = self.STD_BOUND
+            self._vector[1, i] = max(self._vector[1, i], self.STD_BOUND)
 
     def minimize(
         self,

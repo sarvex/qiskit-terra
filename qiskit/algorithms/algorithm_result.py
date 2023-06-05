@@ -23,17 +23,16 @@ class AlgorithmResult(ABC):
     """Abstract Base Class for algorithm results."""
 
     def __str__(self) -> str:
-        result = {}
-        for name, value in inspect.getmembers(self):
+        result = {
+            name: value
+            for name, value in inspect.getmembers(self)
             if (
                 not name.startswith("_")
                 and not inspect.ismethod(value)
                 and not inspect.isfunction(value)
                 and hasattr(self, name)
-            ):
-
-                result[name] = value
-
+            )
+        }
         return pprint.pformat(result, indent=4)
 
     def combine(self, result: "AlgorithmResult") -> None:

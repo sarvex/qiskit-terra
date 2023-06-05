@@ -68,10 +68,7 @@ def circuit_to_instruction(circuit, parameter_map=None, equivalence_library=None
 
     if parameter_dict.keys() != circuit.parameters:
         raise QiskitError(
-            (
-                "parameter_map should map all circuit parameters. "
-                "Circuit parameters: {}, parameter_map: {}"
-            ).format(circuit.parameters, parameter_dict)
+            f"parameter_map should map all circuit parameters. Circuit parameters: {circuit.parameters}, parameter_map: {parameter_dict}"
         )
 
     out_instruction = Instruction(
@@ -110,8 +107,7 @@ def circuit_to_instruction(circuit, parameter_map=None, equivalence_library=None
 
     # fix condition
     for rule in definition:
-        condition = getattr(rule.operation, "condition", None)
-        if condition:
+        if condition := getattr(rule.operation, "condition", None):
             reg, val = condition
             if isinstance(reg, Clbit):
                 rule.operation.condition = (clbit_map[reg], val)

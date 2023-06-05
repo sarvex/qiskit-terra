@@ -170,16 +170,14 @@ def _assemble_experiments(
     # Frequency sweep
     if freq_configs and len(experiments) == 1:
         experiment = experiments[0]
-        experiments = []
-        for freq_config in freq_configs:
-            experiments.append(
-                qobj.PulseQobjExperiment(
-                    header=experiment.header,
-                    instructions=experiment.instructions,
-                    config=freq_config,
-                )
+        experiments = [
+            qobj.PulseQobjExperiment(
+                header=experiment.header,
+                instructions=experiment.instructions,
+                config=freq_config,
             )
-
+            for freq_config in freq_configs
+        ]
     # Top level Qobj configuration
     experiment_config = {
         "pulse_library": [
@@ -268,11 +266,13 @@ def _assemble_instructions(
     if acquire_instruction_map:
         if hasattr(run_config, "meas_map"):
             _validate_meas_map(acquire_instruction_map, run_config.meas_map)
-        for (time, _), instruction_bundle in acquire_instruction_map.items():
-            qobj_instructions.append(
-                instruction_converter(time, instruction_bundle),
-            )
-
+        qobj_instructions.extend(
+            instruction_converter(time, instruction_bundle)
+            for (
+                time,
+                _,
+            ), instruction_bundle in acquire_instruction_map.items()
+        )
     return qobj_instructions, max_memory_slot
 
 
@@ -306,18 +306,7 @@ def _validate_meas_map(
                 common_next = next_inst_qubits.intersection(meas_set)
                 if common_instr_qubits and common_next:
                     raise QiskitError(
-                        "Qubits {} and {} are in the same measurement grouping: {}. "
-                        "They must either be acquired at the same time, or disjointly"
-                        ". Instead, they were acquired at times: {}-{} and "
-                        "{}-{}".format(
-                            common_instr_qubits,
-                            common_next,
-                            meas_map,
-                            inst[0][0],
-                            inst_end_time,
-                            next_inst_time,
-                            next_inst_time + next_inst[0][1],
-                        )
+                        f"Qubits {common_instr_qubits} and {common_next} are in the same measurement grouping: {meas_map}. They must either be acquired at the same time, or disjointly. Instead, they were acquired at times: {inst[0][0]}-{inst_end_time} and {next_inst_time}-{next_inst_time + next_inst[0][1]}"
                     )
 
 
@@ -361,12 +350,9 @@ def _assemble_config(
     schedule_los = qobj_config.pop("schedule_los", [])
     if len(schedule_los) == 1:
         lo_dict = schedule_los[0]
-        q_los = lo_converter.get_qubit_los(lo_dict)
-        # Hz -> GHz
-        if q_los:
+        if q_los := lo_converter.get_qubit_los(lo_dict):
             qobj_config["qubit_lo_freq"] = [freq / 1e9 for freq in q_los]
-        m_los = lo_converter.get_meas_los(lo_dict)
-        if m_los:
+        if m_los := lo_converter.get_meas_los(lo_dict):
             qobj_config["meas_lo_freq"] = [freq / 1e9 for freq in m_los]
 
     return qobj.PulseQobjConfig(**qobj_config)

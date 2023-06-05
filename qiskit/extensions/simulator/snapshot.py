@@ -89,15 +89,13 @@ def snapshot(self, label, snapshot_type="statevector", qubits=None, params=None)
     if not qubits:
         tuples = []
         if isinstance(self, QuantumCircuit):
-            for register in self.qregs:
-                tuples.append(register)
+            tuples.extend(iter(self.qregs))
         if not tuples:
             raise ExtensionError("no qubits for snapshot")
         qubits = []
         for tuple_element in tuples:
             if isinstance(tuple_element, QuantumRegister):
-                for j in range(tuple_element.size):
-                    qubits.append(tuple_element[j])
+                qubits.extend(tuple_element[j] for j in range(tuple_element.size))
             else:
                 qubits.append(tuple_element)
     return self.append(

@@ -65,14 +65,13 @@ class Suzuki(TrotterizationBase):
 
         if isinstance(operator.coeff, (float, ParameterExpression)):
             coeff = operator.coeff
+        elif isreal(operator.coeff):
+            coeff = operator.coeff.real
         else:
-            if isreal(operator.coeff):
-                coeff = operator.coeff.real
-            else:
-                raise TypeError(
-                    "Coefficient of the operator must be float or ParameterExpression, "
-                    f"but {operator.coeff}:{type(operator.coeff)} is given."
-                )
+            raise TypeError(
+                "Coefficient of the operator must be float or ParameterExpression, "
+                f"but {operator.coeff}:{type(operator.coeff)} is given."
+            )
 
         if isinstance(operator, PauliSumOp):
             comp_list = self._recursive_expansion(operator, coeff, self.order, self.reps)

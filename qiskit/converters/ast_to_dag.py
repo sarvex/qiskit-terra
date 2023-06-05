@@ -139,40 +139,41 @@ class AstInterpreter:
             reg = self.dag.cregs[node.name]
         else:
             raise QiskitError(
-                "expected qreg or creg name:", "line=%s" % node.line, "file=%s" % node.file
+                "expected qreg or creg name:",
+                f"line={node.line}",
+                f"file={node.file}",
             )
 
         if node.type == "indexed_id":
             # An indexed bit or qubit
             return [reg[node.index]]
         elif node.type == "id":
-            # A qubit or qreg or creg
             if not self.bit_stack[-1]:
                 # Global scope
                 return list(reg)
-            else:
-                # local scope
-                if node.name in self.bit_stack[-1]:
-                    return [self.bit_stack[-1][node.name]]
-                raise QiskitError(
-                    "expected local bit name:", "line=%s" % node.line, "file=%s" % node.file
-                )
+            # local scope
+            if node.name in self.bit_stack[-1]:
+                return [self.bit_stack[-1][node.name]]
+            raise QiskitError(
+                "expected local bit name:",
+                f"line={node.line}",
+                f"file={node.file}",
+            )
         return None
 
     def _process_custom_unitary(self, node):
         """Process a custom unitary node."""
         name = node.name
-        if node.arguments is not None:
-            args = self._process_node(node.arguments)
-        else:
-            args = []
+        args = self._process_node(node.arguments) if node.arguments is not None else []
         bits = [self._process_bit_id(node_element) for node_element in node.bitlist.children]
 
         if name in self.gates:
             self._arguments(name, bits, args)
         else:
             raise QiskitError(
-                "internal error undefined gate:", "line=%s" % node.line, "file=%s" % node.file
+                "internal error undefined gate:",
+                f"line={node.line}",
+                f"file={node.file}",
             )
 
     def _process_u(self, node):
@@ -218,18 +219,17 @@ class AstInterpreter:
         de_gate["bits"] = [c.name for c in node.bitlist.children]
         if node.name in self.standard_extension:
             return
-        if opaque:
-            de_gate["body"] = None
-        else:
-            de_gate["body"] = node.body
+        de_gate["body"] = None if opaque else node.body
 
     def _process_cnot(self, node):
         """Process a CNOT gate node."""
         id0 = self._process_bit_id(node.children[0])
         id1 = self._process_bit_id(node.children[1])
-        if not (len(id0) == len(id1) or len(id0) == 1 or len(id1) == 1):
+        if len(id0) != len(id1) and len(id0) != 1 and len(id1) != 1:
             raise QiskitError(
-                "internal error: qreg size mismatch", "line=%s" % node.line, "file=%s" % node.file
+                "internal error: qreg size mismatch",
+                f"line={node.line}",
+                f"file={node.file}",
             )
         maxidx = max([len(id0), len(id1)])
         for idx in range(maxidx):
@@ -248,7 +248,9 @@ class AstInterpreter:
         id1 = self._process_bit_id(node.children[1])
         if len(id0) != len(id1):
             raise QiskitError(
-                "internal error: reg size mismatch", "line=%s" % node.line, "file=%s" % node.file
+                "internal error: reg size mismatch",
+                f"line={node.line}",
+                f"file={node.file}",
             )
         for idx, idy in zip(id0, id1):
             meas_gate = Measure()
@@ -333,8 +335,7 @@ class AstInterpreter:
             ids = self._process_node(node.children[0])
             qubits = []
             for qubit in ids:
-                for j, _ in enumerate(qubit):
-                    qubits.append(qubit[j])
+                qubits.extend(qubit[j] for j, _ in enumerate(qubit))
             self.dag.apply_operation_back(Barrier(len(qubits)), qubits, [])
 
         elif node.type == "reset":
@@ -357,8 +358,8 @@ class AstInterpreter:
             raise QiskitError(
                 "internal error: undefined node type",
                 node.type,
-                "line=%s" % node.line,
-                "file=%s" % node.file,
+                f"line={node.line}",
+                f"file={node.file}",
             )
         return None
 
@@ -373,11 +374,13 @@ class AstInterpreter:
             qparams = []
             eparams = []
             for param_list in child_op.children[1:]:
-                if param_list.type == "id_list":
+                if param_list.type == "expression_list":
+                    eparams.extend(
+                        param.sym(nested_scope=[exp_args])
+                        for param in param_list.children
+                    )
+                elif param_list.type == "id_list":
                     qparams = [bit_args[param.name] for param in param_list.children]
-                elif param_list.type == "expression_list":
-                    for param in param_list.children:
-                        eparams.append(param.sym(nested_scope=[exp_args]))
             op = self._create_op(child_op.name, params=eparams)
             rules.append((op, qparams, []))
         circ = QuantumCircuit(qreg)
@@ -410,5 +413,5 @@ class AstInterpreter:
                 # call a custom gate (otherwise, opaque)
                 op.definition = self._gate_rules_to_qiskit_circuit(self.gates[name], params=params)
         else:
-            raise QiskitError("unknown operation for ast node name %s" % name)
+            raise QiskitError(f"unknown operation for ast node name {name}")
         return op

@@ -94,13 +94,13 @@ class ParameterTable(MutableMapping):
         Raises:
             ValueError: A value in ``mapping`` is not a :class:`~ParameterReferences`.
         """
-        if mapping is not None:
-            if any(not isinstance(refs, ParameterReferences) for refs in mapping.values()):
-                raise ValueError("Values must be of type ParameterReferences")
-            self._table = mapping.copy()
-        else:
+        if mapping is None:
             self._table = {}
 
+        elif any(not isinstance(refs, ParameterReferences) for refs in mapping.values()):
+            raise ValueError("Values must be of type ParameterReferences")
+        else:
+            self._table = mapping.copy()
         self._keys = set(self._table)
         self._names = {x.name for x in self._table}
 
@@ -168,11 +168,7 @@ class ParameterView(MappingView):
     """
 
     def __init__(self, iterable=None):
-        if iterable is not None:
-            self.data = list(iterable)
-        else:
-            self.data = []
-
+        self.data = list(iterable) if iterable is not None else []
         super().__init__(self.data)
 
     def copy(self):
@@ -181,7 +177,7 @@ class ParameterView(MappingView):
 
     def isdisjoint(self, x):
         """Check whether self and the input are disjoint."""
-        return not any(element in self for element in x)
+        return all(element not in self for element in x)
 
     def remove(self, x):
         """Remove an existing element from the view."""
@@ -197,11 +193,7 @@ class ParameterView(MappingView):
 
     def __and__(self, x):
         """Get the intersection between self and the input."""
-        inter = []
-        for element in self:
-            if element in x:
-                inter.append(element)
-
+        inter = [element for element in self if element in x]
         return self.__class__(inter)
 
     def __rand__(self, x):
@@ -241,17 +233,13 @@ class ParameterView(MappingView):
         return all(element in x for element in self)
 
     def __lt__(self, x):
-        if x != self:
-            return self <= x
-        return False
+        return self <= x if x != self else False
 
     def __ge__(self, x):
         return all(element in self for element in x)
 
     def __gt__(self, x):
-        if x != self:
-            return self >= x
-        return False
+        return self >= x if x != self else False
 
     def __iter__(self):
         return iter(self.data)

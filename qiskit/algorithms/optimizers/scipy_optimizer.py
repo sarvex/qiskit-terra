@@ -102,7 +102,7 @@ class SciPyOptimizer(Optimizer):
 
         settings["max_evals_grouped"] = self._max_evals_grouped
         settings["options"] = options
-        settings.update(self._kwargs)
+        settings |= self._kwargs
 
         # the subclasses don't need the "method" key as the class type specifies the method
         if self.__class__ == SciPyOptimizer:
@@ -171,8 +171,6 @@ class SciPyOptimizer(Optimizer):
     def _wrap_gradient(gradient_function):
         def wrapped_gradient(x):
             gradient = gradient_function(x)
-            if isinstance(gradient, np.ndarray):
-                return gradient.tolist()
-            return gradient
+            return gradient.tolist() if isinstance(gradient, np.ndarray) else gradient
 
         return wrapped_gradient

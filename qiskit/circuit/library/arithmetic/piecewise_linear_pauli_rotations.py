@@ -201,8 +201,7 @@ class PiecewiseLinearPauliRotations(FunctionalPauliRotations):
             valid = False
             if raise_on_failure:
                 raise CircuitError(
-                    "Not enough qubits in the circuit, need at least "
-                    "{}.".format(self.num_state_qubits + 1)
+                    f"Not enough qubits in the circuit, need at least {self.num_state_qubits + 1}."
                 )
 
         if len(self.breakpoints) != len(self.slopes) or len(self.breakpoints) != len(self.offsets):

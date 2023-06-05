@@ -196,46 +196,44 @@ class DerivativeBase(ConverterBase):
         """
         if isinstance(operator, ListOp) and not isinstance(operator, ComposedOp):
             return operator.traverse(cls._factor_coeffs_out_of_composed_op)
-        if isinstance(operator, ComposedOp):
-            total_coeff = operator.coeff
-            take_norm_of_coeffs = False
-            for k, op in enumerate(operator.oplist):
-                if take_norm_of_coeffs:
-                    total_coeff *= op.coeff * np.conj(op.coeff)  # type: ignore
-                else:
-                    total_coeff *= op.coeff  # type: ignore
-                if hasattr(op, "primitive"):
-                    prim = op.primitive  # type: ignore
-                    if isinstance(op, StateFn) and isinstance(prim, TensoredOp):
-                        # Check if any of the coefficients in the TensoredOp is a
-                        # ParameterExpression
-                        for prim_op in prim.oplist:
-                            # If a coefficient is a ParameterExpression make sure that the
-                            # coefficients are pulled together correctly
-                            if isinstance(prim_op.coeff, ParameterExpression):
-                                prim_tensored = StateFn(
-                                    prim.reduce(), is_measurement=op.is_measurement, coeff=op.coeff
-                                )
-                                operator.oplist[k] = prim_tensored
-                                return operator.traverse(cls._factor_coeffs_out_of_composed_op)
-                    elif isinstance(prim, ListOp):
-                        raise ValueError(
-                            "This operator was not properly decomposed. "
-                            "By this point, all operator measurements should "
-                            "contain single operators, otherwise the coefficient "
-                            "gradients will not be handled properly."
-                        )
-                    if hasattr(prim, "coeff"):
-                        if take_norm_of_coeffs:
-                            total_coeff *= prim._coeff * np.conj(prim._coeff)
-                        else:
-                            total_coeff *= prim._coeff
-                if isinstance(op, OperatorStateFn) and op.is_measurement:
-                    take_norm_of_coeffs = True
-            return cls._erase_operator_coeffs(operator).mul(total_coeff)
-
-        else:
+        if not isinstance(operator, ComposedOp):
             return operator
+        total_coeff = operator.coeff
+        take_norm_of_coeffs = False
+        for k, op in enumerate(operator.oplist):
+            if take_norm_of_coeffs:
+                total_coeff *= op.coeff * np.conj(op.coeff)  # type: ignore
+            else:
+                total_coeff *= op.coeff  # type: ignore
+            if hasattr(op, "primitive"):
+                prim = op.primitive  # type: ignore
+                if isinstance(op, StateFn) and isinstance(prim, TensoredOp):
+                    # Check if any of the coefficients in the TensoredOp is a
+                    # ParameterExpression
+                    for prim_op in prim.oplist:
+                        # If a coefficient is a ParameterExpression make sure that the
+                        # coefficients are pulled together correctly
+                        if isinstance(prim_op.coeff, ParameterExpression):
+                            prim_tensored = StateFn(
+                                prim.reduce(), is_measurement=op.is_measurement, coeff=op.coeff
+                            )
+                            operator.oplist[k] = prim_tensored
+                            return operator.traverse(cls._factor_coeffs_out_of_composed_op)
+                elif isinstance(prim, ListOp):
+                    raise ValueError(
+                        "This operator was not properly decomposed. "
+                        "By this point, all operator measurements should "
+                        "contain single operators, otherwise the coefficient "
+                        "gradients will not be handled properly."
+                    )
+                if hasattr(prim, "coeff"):
+                    if take_norm_of_coeffs:
+                        total_coeff *= prim._coeff * np.conj(prim._coeff)
+                    else:
+                        total_coeff *= prim._coeff
+            if isinstance(op, OperatorStateFn) and op.is_measurement:
+                take_norm_of_coeffs = True
+        return cls._erase_operator_coeffs(operator).mul(total_coeff)
 
 
 def _coeff_derivative(coeff, param):

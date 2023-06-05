@@ -50,16 +50,14 @@ def _compute_control_matrix(base_mat, num_ctrl_qubits, ctrl_state=None):
         ctrl_state = ctrl_dim - 1
     elif isinstance(ctrl_state, str):
         ctrl_state = int(ctrl_state, 2)
-    if isinstance(ctrl_state, int):
-        if not 0 <= ctrl_state < ctrl_dim:
-            raise QiskitError("Invalid control state value specified.")
-    else:
+    if not isinstance(ctrl_state, int):
         raise QiskitError("Invalid control state type specified.")
+    if not 0 <= ctrl_state < ctrl_dim:
+        raise QiskitError("Invalid control state value specified.")
     ctrl_proj = numpy.diag(numpy.roll(ctrl_grnd, ctrl_state))
-    full_mat = numpy.kron(numpy.eye(2**num_target), numpy.eye(ctrl_dim) - ctrl_proj) + numpy.kron(
-        base_mat, ctrl_proj
-    )
-    return full_mat
+    return numpy.kron(
+        numpy.eye(2**num_target), numpy.eye(ctrl_dim) - ctrl_proj
+    ) + numpy.kron(base_mat, ctrl_proj)
 
 
 def _ctrl_state_to_int(ctrl_state, num_ctrl_qubits):
@@ -82,7 +80,7 @@ def _ctrl_state_to_int(ctrl_state, num_ctrl_qubits):
             assert len(ctrl_state) == num_ctrl_qubits
             ctrl_state = int(ctrl_state, 2)
         except ValueError as ex:
-            raise CircuitError("invalid control bit string: " + ctrl_state) from ex
+            raise CircuitError(f"invalid control bit string: {ctrl_state}") from ex
         except AssertionError as ex:
             raise CircuitError("invalid control bit string: length != num_ctrl_qubits") from ex
     if isinstance(ctrl_state, int):

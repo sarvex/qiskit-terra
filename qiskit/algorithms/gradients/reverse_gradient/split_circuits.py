@@ -51,16 +51,13 @@ def split(
 
             params = [p for p in parameters if p in free_inst_params]
 
-        new_split = bool(len(params) > 0)
+        new_split = len(params) > 0
 
+        sub.append(inst)
         if new_split:
-            sub.append(inst)
             circuits.append(sub)
             corresponding_parameters.append(params)
             sub = QuantumCircuit(*circuit.qregs, *circuit.cregs)
-        else:
-            sub.append(inst)
-
     # handle leftover gates
     if len(sub.data) > 0:
         circuits[-1].compose(sub, inplace=True)

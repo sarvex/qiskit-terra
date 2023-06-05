@@ -92,10 +92,7 @@ def pi_check(inpt, eps=1e-9, output="text", ndigits=None):
                 if abs(val) == 1:
                     str_out = f"{neg_str}{pi}"
                 else:
-                    if output == "qasm":
-                        str_out = f"{neg_str}{val}*{pi}"
-                    else:
-                        str_out = f"{neg_str}{val}{pi}"
+                    str_out = f"{neg_str}{val}*{pi}" if output == "qasm" else f"{neg_str}{val}{pi}"
                 return str_out
 
         # Second is a check for powers of pi

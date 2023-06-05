@@ -117,7 +117,7 @@ class CDKMRippleCarryAdder(Adder):
         qr_b = QuantumRegister(num_state_qubits, name="b")
         self.add_register(qr_a, qr_b)
 
-        if kind in ["full", "half"]:
+        if kind in {"full", "half"}:
             qr_z = QuantumRegister(1, name="cout")
             self.add_register(qr_z)
 
@@ -148,7 +148,7 @@ class CDKMRippleCarryAdder(Adder):
         for i in range(num_state_qubits - 1):
             circuit.append(maj_gate, [qr_a[i + 1], qr_b[i + 1], qr_a[i]])
 
-        if kind in ["full", "half"]:
+        if kind in {"full", "half"}:
             circuit.cx(qr_a[-1], qr_z[0])
 
         for i in reversed(range(num_state_qubits - 1)):

@@ -155,26 +155,22 @@ def _gate_gradient(gate: Gate) -> Instruction:
         cxx_circ = QuantumCircuit(3)
         cxx_circ.cx(0, 1)
         cxx_circ.cx(0, 2)
-        cxx = cxx_circ.to_instruction()
-        return cxx
+        return cxx_circ.to_instruction()
     if isinstance(gate, RYYGate):
         cyy_circ = QuantumCircuit(3)
         cyy_circ.cy(0, 1)
         cyy_circ.cy(0, 2)
-        cyy = cyy_circ.to_instruction()
-        return cyy
+        return cyy_circ.to_instruction()
     if isinstance(gate, RZZGate):
         czz_circ = QuantumCircuit(3)
         czz_circ.cz(0, 1)
         czz_circ.cz(0, 2)
-        czz = czz_circ.to_instruction()
-        return czz
+        return czz_circ.to_instruction()
     if isinstance(gate, RZXGate):
         czx_circ = QuantumCircuit(3)
         czx_circ.cx(0, 2)
         czx_circ.cz(0, 1)
-        czx = czx_circ.to_instruction()
-        return czx
+        return czx_circ.to_instruction()
     raise TypeError(f"Unrecognized parameterized gate, {gate}")
 
 

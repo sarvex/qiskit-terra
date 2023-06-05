@@ -217,20 +217,15 @@ class PauliBasisChange(ConverterBase):
             and self._traverse
             and "Pauli" in operator.primitive_strings()
         ):
-            # If ListOp is abelian we can find a single post-rotation circuit
-            # for the whole set. For now,
-            # assume operator can only be abelian if all elements are
-            # Paulis (enforced in AbelianGrouper).
-            if operator.abelian:
-                origin_pauli = self.get_tpb_pauli(operator)
-                cob_instr_op, _ = self.get_cob_circuit(origin_pauli)
-                oplist = cast(List[PauliOp], operator.oplist)
-                diag_ops = [self.get_diagonal_pauli_op(op) for op in oplist]
-                dest_list_op = operator.__class__(diag_ops, coeff=operator.coeff, abelian=True)
-                return self._replacement_fn(cob_instr_op, dest_list_op)
-            else:
+            if not operator.abelian:
                 return operator.traverse(self.convert)
 
+            origin_pauli = self.get_tpb_pauli(operator)
+            cob_instr_op, _ = self.get_cob_circuit(origin_pauli)
+            oplist = cast(List[PauliOp], operator.oplist)
+            diag_ops = [self.get_diagonal_pauli_op(op) for op in oplist]
+            dest_list_op = operator.__class__(diag_ops, coeff=operator.coeff, abelian=True)
+            return self._replacement_fn(cob_instr_op, dest_list_op)
         return operator
 
     @staticmethod
@@ -378,7 +373,7 @@ class PauliBasisChange(ConverterBase):
         pauli_1, pauli_2 = pauli_op1.primitive, pauli_op2.primitive
 
         # Padding to the end of the Pauli, but remember that Paulis are in reverse endianness.
-        if not len(pauli_1.z) == num_qubits:
+        if len(pauli_1.z) != num_qubits:
             missing_qubits = num_qubits - len(pauli_1.z)
             pauli_1 = Pauli(
                 (
@@ -386,7 +381,7 @@ class PauliBasisChange(ConverterBase):
                     ([False] * missing_qubits) + pauli_1.x.tolist(),
                 )
             )
-        if not len(pauli_2.z) == num_qubits:
+        if len(pauli_2.z) != num_qubits:
             missing_qubits = num_qubits - len(pauli_2.z)
             pauli_2 = Pauli(
                 (
@@ -455,11 +450,11 @@ class PauliBasisChange(ConverterBase):
         # Step 3) Take the indices of bits which are sig_bits in
         # pauli but but not in dest, and cnot them to the pauli anchor.
         for i in sig_in_origin_only_indices:
-            if not i == origin_anchor_bit:
+            if i != origin_anchor_bit:
                 cnots.cx(i, origin_anchor_bit)
 
         # Step 4)
-        if not origin_anchor_bit == dest_anchor_bit:
+        if origin_anchor_bit != dest_anchor_bit:
             cnots.swap(origin_anchor_bit, dest_anchor_bit)
 
         # Need to do this or a Terra bug sometimes flips cnots. No time to investigate.
@@ -467,7 +462,7 @@ class PauliBasisChange(ConverterBase):
 
         # Step 6)
         for i in sig_in_dest_only_indices:
-            if not i == dest_anchor_bit:
+            if i != dest_anchor_bit:
                 cnots.cx(i, dest_anchor_bit)
 
         return PrimitiveOp(cnots)

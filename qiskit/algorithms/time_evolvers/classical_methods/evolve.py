@@ -92,8 +92,9 @@ def _evaluate_aux_ops(
     Returns:
         Mean of the aux operators for a given state.
     """
-    op_means = np.array([np.real(state.conjugate().dot(op.dot(state))) for op in aux_ops])
-    return op_means
+    return np.array(
+        [np.real(state.conjugate().dot(op.dot(state))) for op in aux_ops]
+    )
 
 
 def _operator_to_matrix(operator: BaseOperator | PauliSumOp):

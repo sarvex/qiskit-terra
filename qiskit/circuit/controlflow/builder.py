@@ -431,13 +431,11 @@ class ControlFlowBuilderBlock:
                 # We want to avoid iterating over the tuples unnecessarily if there's no chance
                 # we'll need to add bits to the circuit.
                 if potential_qubits and qubits:
-                    add_qubits = potential_qubits.intersection(qubits)
-                    if add_qubits:
+                    if add_qubits := potential_qubits.intersection(qubits):
                         potential_qubits -= add_qubits
                         out.add_bits(add_qubits)
                 if potential_clbits and clbits:
-                    add_clbits = potential_clbits.intersection(clbits)
-                    if add_clbits:
+                    if add_clbits := potential_clbits.intersection(clbits):
                         potential_clbits -= add_clbits
                         out.add_bits(add_clbits)
                 for register in itertools.chain(resources.qregs, resources.cregs):

@@ -171,31 +171,30 @@ def control(
                         controlled_circ.cu(
                             theta, phi, lamb, 0, q_control[0], q_target[bit_indices[qargs[0]]]
                         )
+                elif phi == -pi / 2 and lamb == pi / 2:
+                    controlled_circ.mcrx(
+                        theta, q_control, q_target[bit_indices[qargs[0]]], use_basis_gates=True
+                    )
+                elif phi == 0 and lamb == 0:
+                    controlled_circ.mcry(
+                        theta,
+                        q_control,
+                        q_target[bit_indices[qargs[0]]],
+                        q_ancillae,
+                        use_basis_gates=True,
+                    )
+                elif theta == 0 and phi == 0:
+                    controlled_circ.mcp(lamb, q_control, q_target[bit_indices[qargs[0]]])
                 else:
-                    if phi == -pi / 2 and lamb == pi / 2:
-                        controlled_circ.mcrx(
-                            theta, q_control, q_target[bit_indices[qargs[0]]], use_basis_gates=True
-                        )
-                    elif phi == 0 and lamb == 0:
-                        controlled_circ.mcry(
-                            theta,
-                            q_control,
-                            q_target[bit_indices[qargs[0]]],
-                            q_ancillae,
-                            use_basis_gates=True,
-                        )
-                    elif theta == 0 and phi == 0:
-                        controlled_circ.mcp(lamb, q_control, q_target[bit_indices[qargs[0]]])
-                    else:
-                        controlled_circ.mcp(lamb, q_control, q_target[bit_indices[qargs[0]]])
-                        controlled_circ.mcry(
-                            theta,
-                            q_control,
-                            q_target[bit_indices[qargs[0]]],
-                            q_ancillae,
-                            use_basis_gates=True,
-                        )
-                        controlled_circ.mcp(phi, q_control, q_target[bit_indices[qargs[0]]])
+                    controlled_circ.mcp(lamb, q_control, q_target[bit_indices[qargs[0]]])
+                    controlled_circ.mcry(
+                        theta,
+                        q_control,
+                        q_target[bit_indices[qargs[0]]],
+                        q_ancillae,
+                        use_basis_gates=True,
+                    )
+                    controlled_circ.mcp(phi, q_control, q_target[bit_indices[qargs[0]]])
             elif gate.name == "z":
                 controlled_circ.h(q_target[bit_indices[qargs[0]]])
                 controlled_circ.mcx(q_control, q_target[bit_indices[qargs[0]]], q_ancillae)
@@ -204,7 +203,6 @@ def control(
                 raise CircuitError(f"gate contains non-controllable instructions: {gate.name}")
             if gate.definition is not None and gate.definition.global_phase:
                 global_phase += gate.definition.global_phase
-    # apply controlled global phase
     if global_phase:
         if len(q_control) < 2:
             controlled_circ.p(global_phase, q_control)
@@ -230,7 +228,7 @@ def control(
     else:
         ctrl_substr = ("{0}" * new_num_ctrl_qubits).format("c")
     new_name = f"{ctrl_substr}{base_name}"
-    cgate = controlledgate.ControlledGate(
+    return controlledgate.ControlledGate(
         new_name,
         controlled_circ.num_qubits,
         operation.params,
@@ -240,7 +238,6 @@ def control(
         ctrl_state=new_ctrl_state,
         base_gate=base_gate,
     )
-    return cgate
 
 
 def _gate_to_dag(operation):
@@ -248,11 +245,10 @@ def _gate_to_dag(operation):
 
     if hasattr(operation, "definition") and operation.definition is not None:
         return circuit_to_dag(operation.definition)
-    else:
-        qr = QuantumRegister(operation.num_qubits)
-        qc = QuantumCircuit(qr, name=operation.name)
-        qc.append(operation, qr)
-        return circuit_to_dag(qc)
+    qr = QuantumRegister(operation.num_qubits)
+    qc = QuantumCircuit(qr, name=operation.name)
+    qc.append(operation, qr)
+    return circuit_to_dag(qc)
 
 
 def _unroll_gate(operation, basis_gates):

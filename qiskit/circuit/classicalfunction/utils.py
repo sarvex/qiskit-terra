@@ -47,16 +47,17 @@ def _convert_tweedledum_operator(op):
         if op.kind() == "py_operator":
             return op.py_op()
         else:
-            raise RuntimeError("Unrecognized operator: %s" % op.kind())
+            raise RuntimeError(f"Unrecognized operator: {op.kind()}")
 
     # TODO: need to deal with cbits too!
     if op.num_controls() > 0:
         from tweedledum.ir import Qubit  # pylint: disable=import-error
 
         qubits = op.qubits()
-        ctrl_state = ""
-        for qubit in qubits[: op.num_controls()]:
-            ctrl_state += f"{int(qubit.polarity() == Qubit.Polarity.positive)}"
+        ctrl_state = "".join(
+            f"{int(qubit.polarity() == Qubit.Polarity.positive)}"
+            for qubit in qubits[: op.num_controls()]
+        )
         return base_gate().control(len(ctrl_state), ctrl_state=ctrl_state[::-1])
     return base_gate()
 
