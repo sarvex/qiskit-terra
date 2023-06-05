@@ -232,8 +232,7 @@ class StatePreparation(Gate):
             if parameter in ["0", "1", "+", "-", "l", "r"]:
                 return parameter
             raise CircuitError(
-                "invalid param label {} for instruction {}. Label should be "
-                "0, 1, +, -, l, or r ".format(type(parameter), self.name)
+                f"invalid param label {type(parameter)} for instruction {self.name}. Label should be 0, 1, +, -, l, or r "
             )
 
         # StatePreparation instruction parameter can be int, float, and complex.
@@ -369,14 +368,14 @@ class StatePreparation(Gate):
         local_num_qubits = int(math.log2(list_len)) + 1
 
         q = QuantumRegister(local_num_qubits)
-        circuit = QuantumCircuit(q, name="multiplex" + str(local_num_qubits))
+        circuit = QuantumCircuit(q, name=f"multiplex{str(local_num_qubits)}")
 
         lsb = q[0]
         msb = q[local_num_qubits - 1]
 
         # case of no multiplexing: base case for recursion
         if local_num_qubits == 1:
-            circuit.append(target_gate(list_of_angles[0]), [q[0]])
+            circuit.append(target_gate(list_of_angles[0]), [lsb])
             return circuit
 
         # calc angle weights, assuming recursion (that is the lower-level
@@ -387,8 +386,10 @@ class StatePreparation(Gate):
         list_of_angles = angle_weight.dot(np.array(list_of_angles)).tolist()
 
         # recursive step on half the angles fulfilling the above assumption
-        multiplex_1 = self._multiplex(target_gate, list_of_angles[0 : (list_len // 2)], False)
-        circuit.append(multiplex_1.to_instruction(), q[0:-1])
+        multiplex_1 = self._multiplex(
+            target_gate, list_of_angles[: list_len // 2], False
+        )
+        circuit.append(multiplex_1.to_instruction(), q[:-1])
 
         # attach CNOT as follows, thereby flipping the LSB qubit
         circuit.append(CXGate(), [msb, lsb])
@@ -398,9 +399,9 @@ class StatePreparation(Gate):
         # second lower-level multiplex)
         multiplex_2 = self._multiplex(target_gate, list_of_angles[(list_len // 2) :], False)
         if list_len > 1:
-            circuit.append(multiplex_2.to_instruction().reverse_ops(), q[0:-1])
+            circuit.append(multiplex_2.to_instruction().reverse_ops(), q[:-1])
         else:
-            circuit.append(multiplex_2.to_instruction(), q[0:-1])
+            circuit.append(multiplex_2.to_instruction(), q[:-1])
 
         # attach a final CNOT
         if last_cnot:

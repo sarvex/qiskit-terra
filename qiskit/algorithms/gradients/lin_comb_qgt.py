@@ -170,17 +170,16 @@ class LinCombQGT(BaseQGT):
             )
 
             n = len(qgt_circuits)
+            all_m.append(len(parameters_))
             if self._derivative_type == DerivativeType.COMPLEX:
                 job_circuits.extend(qgt_circuits * 2)
                 job_observables.extend([observable_1] * n + [observable_2] * n)
                 job_param_values.extend([parameter_values_] * 2 * n)
-                all_m.append(len(parameters_))
                 all_n.append(2 * n)
             else:
                 job_circuits.extend(qgt_circuits)
                 job_observables.extend([observable_1] * n)
                 job_param_values.extend([parameter_values_] * n)
-                all_m.append(len(parameters_))
                 all_n.append(n)
 
         # Run the single job with all circuits.
@@ -222,7 +221,7 @@ class LinCombQGT(BaseQGT):
                     phase_fix = np.imag(phase_fix)
                 phase_fixes.append(phase_fix)
         else:
-            phase_fixes = [0 for i in range(len(circuits))]
+            phase_fixes = [0 for _ in range(len(circuits))]
         # Compute the QGT
         qgts = []
         partial_sum_n = 0

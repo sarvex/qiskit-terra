@@ -66,15 +66,15 @@ class ParameterExpression:
 
     def conjugate(self) -> "ParameterExpression":
         """Return the conjugate."""
-        if _optionals.HAS_SYMENGINE:
-            import symengine
-
-            conjugated = ParameterExpression(
-                self._parameter_symbols, symengine.conjugate(self._symbol_expr)
+        if not _optionals.HAS_SYMENGINE:
+            return ParameterExpression(
+                self._parameter_symbols, self._symbol_expr.conjugate()
             )
-        else:
-            conjugated = ParameterExpression(self._parameter_symbols, self._symbol_expr.conjugate())
-        return conjugated
+        import symengine
+
+        return ParameterExpression(
+            self._parameter_symbols, symengine.conjugate(self._symbol_expr)
+        )
 
     def assign(self, parameter, value: ParameterValueType) -> "ParameterExpression":
         """
@@ -141,9 +141,7 @@ class ParameterExpression:
             hasattr(bound_symbol_expr, "is_infinite") and bound_symbol_expr.is_infinite
         ) or bound_symbol_expr == float("inf"):
             raise ZeroDivisionError(
-                "Binding provided for expression "
-                "results in division by zero "
-                "(Expression: {}, Bindings: {}).".format(self, parameter_values)
+                f"Binding provided for expression results in division by zero (Expression: {self}, Bindings: {parameter_values})."
             )
 
         return ParameterExpression(free_parameter_symbols, bound_symbol_expr)
@@ -207,18 +205,17 @@ class ParameterExpression:
         return ParameterExpression(new_parameter_symbols, substituted_symbol_expr)
 
     def _raise_if_passed_unknown_parameters(self, parameters):
-        unknown_parameters = parameters - self.parameters
-        if unknown_parameters:
+        if unknown_parameters := parameters - self.parameters:
             raise CircuitError(
-                "Cannot bind Parameters ({}) not present in "
-                "expression.".format([str(p) for p in unknown_parameters])
+                f"Cannot bind Parameters ({[str(p) for p in unknown_parameters]}) not present in expression."
             )
 
     def _raise_if_passed_nan(self, parameter_values):
-        nan_parameter_values = {
-            p: v for p, v in parameter_values.items() if not isinstance(v, numbers.Number)
-        }
-        if nan_parameter_values:
+        if nan_parameter_values := {
+            p: v
+            for p, v in parameter_values.items()
+            if not isinstance(v, numbers.Number)
+        }:
             raise CircuitError(
                 f"Expression cannot bind non-numeric values ({nan_parameter_values})"
             )
@@ -314,22 +311,15 @@ class ParameterExpression:
 
             expr_grad = Derivative(self._symbol_expr, key).doit()
 
-        # generate the new dictionary of symbols
-        # this needs to be done since in the derivative some symbols might disappear (e.g.
-        # when deriving linear expression)
-        parameter_symbols = {}
-        for parameter, symbol in self._parameter_symbols.items():
-            if symbol in expr_grad.free_symbols:
-                parameter_symbols[parameter] = symbol
-        # If the gradient corresponds to a parameter expression then return the new expression.
-        if len(parameter_symbols) > 0:
+        if parameter_symbols := {
+            parameter: symbol
+            for parameter, symbol in self._parameter_symbols.items()
+            if symbol in expr_grad.free_symbols
+        }:
             return ParameterExpression(parameter_symbols, expr=expr_grad)
         # If no free symbols left, return a complex or float gradient
         expr_grad_cplx = complex(expr_grad)
-        if expr_grad_cplx.imag != 0:
-            return expr_grad_cplx
-        else:
-            return float(expr_grad)
+        return expr_grad_cplx if expr_grad_cplx.imag != 0 else float(expr_grad)
 
     def __add__(self, other):
         return self._apply_operation(operator.add, other)
@@ -462,31 +452,25 @@ class ParameterExpression:
     def __complex__(self):
         try:
             return complex(self._symbol_expr)
-        # TypeError is for sympy, RuntimeError for symengine
         except (TypeError, RuntimeError) as exc:
             raise TypeError(
-                "ParameterExpression with unbound parameters ({}) "
-                "cannot be cast to a complex.".format(self.parameters)
+                f"ParameterExpression with unbound parameters ({self.parameters}) cannot be cast to a complex."
             ) from exc
 
     def __float__(self):
         try:
             return float(self._symbol_expr)
-        # TypeError is for sympy, RuntimeError for symengine
         except (TypeError, RuntimeError) as exc:
             raise TypeError(
-                "ParameterExpression with unbound parameters ({}) "
-                "cannot be cast to a float.".format(self.parameters)
+                f"ParameterExpression with unbound parameters ({self.parameters}) cannot be cast to a float."
             ) from exc
 
     def __int__(self):
         try:
             return int(self._symbol_expr)
-        # TypeError is for sympy, RuntimeError for symengine
         except (TypeError, RuntimeError) as exc:
             raise TypeError(
-                "ParameterExpression with unbound parameters ({}) "
-                "cannot be cast to an int.".format(self.parameters)
+                f"ParameterExpression with unbound parameters ({self.parameters}) cannot be cast to an int."
             ) from exc
 
     def __hash__(self):
@@ -525,12 +509,11 @@ class ParameterExpression:
         if isinstance(other, ParameterExpression):
             if self.parameters != other.parameters:
                 return False
-            if _optionals.HAS_SYMENGINE:
-                from sympy import sympify
-
-                return sympify(self._symbol_expr).equals(sympify(other._symbol_expr))
-            else:
+            if not _optionals.HAS_SYMENGINE:
                 return self._symbol_expr.equals(other._symbol_expr)
+            from sympy import sympify
+
+            return sympify(self._symbol_expr).equals(sympify(other._symbol_expr))
         elif isinstance(other, numbers.Number):
             return len(self.parameters) == 0 and complex(self._symbol_expr) == other
         return False

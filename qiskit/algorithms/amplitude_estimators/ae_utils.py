@@ -60,10 +60,7 @@ def bisect_max(f, a, b, steps=50, minwidth=1e-12, retval=False):
     if it == steps:
         logger.warning("-- Warning, bisect_max didn't converge after %s steps", steps)
 
-    if retval:
-        return m, fm
-
-    return m
+    return (m, fm) if retval else m
 
 
 def _circ_dist(x, p):
@@ -108,11 +105,9 @@ def _derivative_circ_dist(x, p):
     """
     # pylint: disable=chained-comparison,misplaced-comparison-constant
     t = p - x
-    if t < -0.5 or (0 < t and t < 0.5):
+    if t < -0.5 or 0 < t < 0.5:
         return -1
-    if t > 0.5 or (-0.5 < t and t < 0):
-        return 1
-    return 0
+    return 1 if t > 0.5 or -0.5 < t < 0 else 0
 
 
 def _amplitude_to_angle(a):
@@ -174,9 +169,7 @@ def _pdf_a_single_angle(x, p, m, pi_delta):
     M = 2**m
 
     d = pi_delta(x, p)
-    res = np.sin(M * d) ** 2 / (M * np.sin(d)) ** 2 if d != 0 else 1
-
-    return res
+    return np.sin(M * d) ** 2 / (M * np.sin(d)) ** 2 if d != 0 else 1
 
 
 def pdf_a(x, p, m):
@@ -229,28 +222,38 @@ def derivative_log_pdf_a(x, p, m):
     M = 2**m
 
     if x not in [0, 1]:
-        num_p1 = 0
-        for A, dA, B, dB in zip(
-            [_alpha, _beta],
-            [_derivative_alpha, _derivative_beta],
-            [_beta, _alpha],
-            [_derivative_beta, _derivative_alpha],
-        ):
-            num_p1 += 2 * M * np.sin(M * A(x, p)) * np.cos(M * A(x, p)) * dA(x, p) * np.sin(
-                B(x, p)
-            ) ** 2 + 2 * np.sin(M * A(x, p)) ** 2 * np.sin(B(x, p)) * np.cos(B(x, p)) * dB(x, p)
-
+        num_p1 = sum(
+            2
+            * M
+            * np.sin(M * A(x, p))
+            * np.cos(M * A(x, p))
+            * dA(x, p)
+            * np.sin(B(x, p)) ** 2
+            + 2
+            * np.sin(M * A(x, p)) ** 2
+            * np.sin(B(x, p))
+            * np.cos(B(x, p))
+            * dB(x, p)
+            for A, dA, B, dB in zip(
+                [_alpha, _beta],
+                [_derivative_alpha, _derivative_beta],
+                [_beta, _alpha],
+                [_derivative_beta, _derivative_alpha],
+            )
+        )
         den_p1 = (
             np.sin(M * _alpha(x, p)) ** 2 * np.sin(_beta(x, p)) ** 2
             + np.sin(M * _beta(x, p)) ** 2 * np.sin(_alpha(x, p)) ** 2
         )
 
-        num_p2 = 0
-        for A, dA, B in zip(
-            [_alpha, _beta], [_derivative_alpha, _derivative_beta], [_beta, _alpha]
-        ):
-            num_p2 += 2 * np.cos(A(x, p)) * dA(x, p) * np.sin(B(x, p))
-
+        num_p2 = sum(
+            2 * np.cos(A(x, p)) * dA(x, p) * np.sin(B(x, p))
+            for A, dA, B in zip(
+                [_alpha, _beta],
+                [_derivative_alpha, _derivative_beta],
+                [_beta, _alpha],
+            )
+        )
         den_p2 = np.sin(_alpha(x, p)) * np.sin(_beta(x, p))
 
         return num_p1 / den_p1 - num_p2 / den_p2

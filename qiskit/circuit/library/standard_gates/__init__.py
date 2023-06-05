@@ -112,5 +112,4 @@ def get_standard_gate_name_mapping():
         Delay(Parameter("t")),
         Measure(),
     ]
-    name_mapping = {gate.name: gate for gate in gates}
-    return name_mapping
+    return {gate.name: gate for gate in gates}

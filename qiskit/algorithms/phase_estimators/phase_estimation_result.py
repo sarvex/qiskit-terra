@@ -93,8 +93,7 @@ class PhaseEstimationResult(PhaseEstimatorResult):
             # numpy.argmax ignores complex part of number. But, we take abs anyway
             idx = numpy.argmax(abs(self.phases))
             binary_phase_string = numpy.binary_repr(idx, self._num_evaluation_qubits)[::-1]
-        phase = _bit_string_to_phase(binary_phase_string)
-        return phase
+        return _bit_string_to_phase(binary_phase_string)
 
     def filter_phases(self, cutoff: float = 0.0, as_float: bool = True) -> dict:
         """Return a filtered dict of phases (keys) and frequencies (values).

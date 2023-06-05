@@ -110,22 +110,21 @@ class ControlledGate(Gate):
         definition is conjugated with X without changing the internal
         `_definition`.
         """
-        if self._open_ctrl:
-            closed_gate = self.copy()
-            closed_gate.ctrl_state = None
-            bit_ctrl_state = bin(self.ctrl_state)[2:].zfill(self.num_ctrl_qubits)
-            qreg = QuantumRegister(self.num_qubits, "q")
-            qc_open_ctrl = QuantumCircuit(qreg)
-            for qind, val in enumerate(bit_ctrl_state[::-1]):
-                if val == "0":
-                    qc_open_ctrl.x(qind)
-            qc_open_ctrl.append(closed_gate, qargs=qreg[:])
-            for qind, val in enumerate(bit_ctrl_state[::-1]):
-                if val == "0":
-                    qc_open_ctrl.x(qind)
-            return qc_open_ctrl
-        else:
+        if not self._open_ctrl:
             return super().definition
+        closed_gate = self.copy()
+        closed_gate.ctrl_state = None
+        bit_ctrl_state = bin(self.ctrl_state)[2:].zfill(self.num_ctrl_qubits)
+        qreg = QuantumRegister(self.num_qubits, "q")
+        qc_open_ctrl = QuantumCircuit(qreg)
+        for qind, val in enumerate(bit_ctrl_state[::-1]):
+            if val == "0":
+                qc_open_ctrl.x(qind)
+        qc_open_ctrl.append(closed_gate, qargs=qreg[:])
+        for qind, val in enumerate(bit_ctrl_state[::-1]):
+            if val == "0":
+                qc_open_ctrl.x(qind)
+        return qc_open_ctrl
 
     @definition.setter
     def definition(self, excited_def: "QuantumCircuit"):
@@ -147,10 +146,7 @@ class ControlledGate(Gate):
         closed control qubits and <ctrl_state> is the integer value of
         the control state for the gate.
         """
-        if self._open_ctrl:
-            return f"{self._name}_o{self.ctrl_state}"
-        else:
-            return self._name
+        return f"{self._name}_o{self.ctrl_state}" if self._open_ctrl else self._name
 
     @name.setter
     def name(self, name_str):

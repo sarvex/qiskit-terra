@@ -151,9 +151,7 @@ class PhaseEstimationScale:
         else:
             if pauli_sum.primitive_strings() != {"Pauli"}:
                 raise ValueError(
-                    "`pauli_sum` must be a sum of Pauli operators. Got primitives {}.".format(
-                        pauli_sum.primitive_strings()
-                    )
+                    f"`pauli_sum` must be a sum of Pauli operators. Got primitives {pauli_sum.primitive_strings()}."
                 )
 
             bound = abs(pauli_sum.coeff) * sum(abs(pauli.coeff) for pauli in pauli_sum)

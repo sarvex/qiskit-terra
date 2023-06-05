@@ -133,10 +133,7 @@ class DAGDependency:
         else:
             # Set the phase to the [0, 2π) interval
             angle = float(angle)
-            if not angle:
-                self._global_phase = 0
-            else:
-                self._global_phase = angle % (2 * math.pi)
+            self._global_phase = 0 if not angle else angle % (2 * math.pi)
 
     @property
     def calibrations(self):
@@ -171,16 +168,15 @@ class DAGDependency:
             int: the circuit depth
         """
         depth = rx.dag_longest_path_length(self._multi_graph)
-        return depth if depth >= 0 else 0
+        return max(depth, 0)
 
     def add_qubits(self, qubits):
         """Add individual qubit wires."""
         if any(not isinstance(qubit, Qubit) for qubit in qubits):
             raise DAGDependencyError("not a Qubit instance.")
 
-        duplicate_qubits = set(self.qubits).intersection(qubits)
-        if duplicate_qubits:
-            raise DAGDependencyError("duplicate qubits %s" % duplicate_qubits)
+        if duplicate_qubits := set(self.qubits).intersection(qubits):
+            raise DAGDependencyError(f"duplicate qubits {duplicate_qubits}")
 
         self.qubits.extend(qubits)
 
@@ -189,9 +185,8 @@ class DAGDependency:
         if any(not isinstance(clbit, Clbit) for clbit in clbits):
             raise DAGDependencyError("not a Clbit instance.")
 
-        duplicate_clbits = set(self.clbits).intersection(clbits)
-        if duplicate_clbits:
-            raise DAGDependencyError("duplicate clbits %s" % duplicate_clbits)
+        if duplicate_clbits := set(self.clbits).intersection(clbits):
+            raise DAGDependencyError(f"duplicate clbits {duplicate_clbits}")
 
         self.clbits.extend(clbits)
 
@@ -200,7 +195,7 @@ class DAGDependency:
         if not isinstance(qreg, QuantumRegister):
             raise DAGDependencyError("not a QuantumRegister instance.")
         if qreg.name in self.qregs:
-            raise DAGDependencyError("duplicate register %s" % qreg.name)
+            raise DAGDependencyError(f"duplicate register {qreg.name}")
         self.qregs[qreg.name] = qreg
         existing_qubits = set(self.qubits)
         for j in range(qreg.size):
@@ -212,7 +207,7 @@ class DAGDependency:
         if not isinstance(creg, ClassicalRegister):
             raise DAGDependencyError("not a ClassicalRegister instance.")
         if creg.name in self.cregs:
-            raise DAGDependencyError("duplicate register %s" % creg.name)
+            raise DAGDependencyError(f"duplicate register {creg.name}")
         self.cregs[creg.name] = creg
         existing_clbits = set(self.clbits)
         for j in range(creg.size):
@@ -384,11 +379,9 @@ class DAGDependency:
             DAGDepNode: the newly added node.
         """
         directives = ["measure"]
+        qindices_list = []
         if not getattr(operation, "_directive", False) and operation.name not in directives:
-            qindices_list = []
-            for elem in qargs:
-                qindices_list.append(self.qubits.index(elem))
-
+            qindices_list.extend(self.qubits.index(elem) for elem in qargs)
             if getattr(operation, "condition", None):
                 # The change to handling operation.condition follows code patterns in quantum_circuit.py.
                 # However:
@@ -400,10 +393,9 @@ class DAGDependency:
             else:
                 cindices_list = []
         else:
-            qindices_list = []
             cindices_list = []
 
-        new_node = DAGDepNode(
+        return DAGDepNode(
             type="op",
             op=operation,
             name=operation.name,
@@ -414,7 +406,6 @@ class DAGDependency:
             qindices=qindices_list,
             cindices=cindices_list,
         )
-        return new_node
 
     def add_op_node(self, operation, qargs, cargs):
         """Add a DAGDepNode to the graph and update the edges.

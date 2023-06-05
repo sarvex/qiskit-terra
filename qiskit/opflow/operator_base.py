@@ -400,22 +400,21 @@ class OperatorBase(StarAlgebraMixin, TensorMixin, ABC):
             if isinstance(param, ParameterExpression):
                 unrolled_value_dict[param] = value
             if isinstance(param, ParameterVector) and isinstance(value, (list, np.ndarray)):
-                if not len(param) == len(value):
+                if len(param) != len(value):
                     raise ValueError(
-                        "ParameterVector {} has length {}, which differs from value list {} of "
-                        "len {}".format(param, len(param), value, len(value))
+                        f"ParameterVector {param} has length {len(param)}, which differs from value list {value} of len {len(value)}"
                     )
-                unrolled_value_dict.update(zip(param, value))
+                unrolled_value_dict |= zip(param, value)
         if isinstance(list(unrolled_value_dict.values())[0], list):
             # check that all are same length
             unrolled_value_dict_list = []
             try:
-                for i in range(len(list(unrolled_value_dict.values())[0])):  # type: ignore
-                    unrolled_value_dict_list.append(
-                        OperatorBase._get_param_dict_for_index(
-                            unrolled_value_dict, i  # type: ignore
-                        )
+                unrolled_value_dict_list.extend(
+                    OperatorBase._get_param_dict_for_index(
+                        unrolled_value_dict, i  # type: ignore
                     )
+                    for i in range(len(list(unrolled_value_dict.values())[0]))
+                )
                 return unrolled_value_dict_list
             except IndexError as ex:
                 raise OpflowError("Parameter binding lists must all be the same length.") from ex
@@ -432,7 +431,7 @@ class OperatorBase(StarAlgebraMixin, TensorMixin, ABC):
         if permutation is not None:
             other = other.permute(permutation)
         new_self = self
-        if not self.num_qubits == other.num_qubits:
+        if self.num_qubits != other.num_qubits:
             # pylint: disable=cyclic-import
             from .operator_globals import Zero
 

@@ -87,20 +87,14 @@ class QAOAAnsatz(EvolvedOperatorAnsatz):
             valid = False
             if raise_on_failure:
                 raise ValueError(
-                    "The number of qubits of the initial state {} does not match "
-                    "the number of qubits of the cost operator {}".format(
-                        self.initial_state.num_qubits, self.num_qubits
-                    )
+                    f"The number of qubits of the initial state {self.initial_state.num_qubits} does not match the number of qubits of the cost operator {self.num_qubits}"
                 )
 
         if self.mixer_operator is not None and self.mixer_operator.num_qubits != self.num_qubits:
             valid = False
             if raise_on_failure:
                 raise ValueError(
-                    "The number of qubits of the mixer {} does not match "
-                    "the number of qubits of the cost operator {}".format(
-                        self.mixer_operator.num_qubits, self.num_qubits
-                    )
+                    f"The number of qubits of the mixer {self.mixer_operator.num_qubits} does not match the number of qubits of the cost operator {self.num_qubits}"
                 )
 
         return valid
@@ -227,9 +221,7 @@ class QAOAAnsatz(EvolvedOperatorAnsatz):
             mixer_terms = [
                 ("I" * left + "X" + "I" * (num_qubits - left - 1), 1) for left in range(num_qubits)
             ]
-            mixer = SparsePauliOp.from_list(mixer_terms)
-            return mixer
-
+            return SparsePauliOp.from_list(mixer_terms)
         # otherwise we cannot provide a default
         return None
 
@@ -246,9 +238,7 @@ class QAOAAnsatz(EvolvedOperatorAnsatz):
 
     @property
     def num_qubits(self) -> int:
-        if self._cost_operator is None:
-            return 0
-        return self._cost_operator.num_qubits
+        return 0 if self._cost_operator is None else self._cost_operator.num_qubits
 
     def _build(self):
         """If not already built, build the circuit."""

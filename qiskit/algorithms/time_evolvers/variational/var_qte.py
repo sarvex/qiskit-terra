@@ -176,7 +176,7 @@ class VarQTE(ABC):
 
         # TODO: deprecate returning evaluated_aux_ops.
         #  As these are the observables for the last time step.
-        evaluated_aux_ops = observables[-1] if len(observables) > 0 else None
+        evaluated_aux_ops = observables[-1] if observables else None
 
         return VarQTEResult(
             evolved_state, evaluated_aux_ops, observables, time_points, param_values
@@ -280,8 +280,7 @@ class VarQTE(ABC):
         else:
             raise TypeError(f"Unsupported type of param_values provided: {type(param_values)}.")
 
-        init_state_param_dict = dict(zip(init_state_parameters, init_state_parameter_values))
-        return init_state_param_dict
+        return dict(zip(init_state_parameters, init_state_parameter_values))
 
     def _validate_aux_ops(self, evolution_problem: TimeEvolutionProblem) -> None:
         if evolution_problem.aux_operators is not None and self.estimator is None:

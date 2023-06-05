@@ -73,28 +73,24 @@ class ExpectationFactory:
         if primitives in ({"Pauli"}, {"SparsePauliOp"}):
 
             if backend_to_check is None:
-                # If user has Aer but didn't specify a backend, use the Aer fast expectation
                 if optionals.HAS_AER:
                     from qiskit_aer import AerSimulator
 
                     backend_to_check = AerSimulator()
-                # If user doesn't have Aer, use statevector_simulator
-                # for < 16 qubits, and qasm with warning for more.
+                elif operator.num_qubits <= 16:
+                    backend_to_check = BasicAer.get_backend("statevector_simulator")
                 else:
-                    if operator.num_qubits <= 16:
-                        backend_to_check = BasicAer.get_backend("statevector_simulator")
-                    else:
-                        logger.warning(
-                            "%d qubits is a very large expectation value. "
-                            "Consider installing Aer to use "
-                            "Aer's fast expectation, which will perform better here. We'll use "
-                            "the BasicAer qasm backend for this expectation to avoid having to "
-                            "construct the %dx%d operator matrix.",
-                            operator.num_qubits,
-                            2**operator.num_qubits,
-                            2**operator.num_qubits,
-                        )
-                        backend_to_check = BasicAer.get_backend("qasm_simulator")
+                    logger.warning(
+                        "%d qubits is a very large expectation value. "
+                        "Consider installing Aer to use "
+                        "Aer's fast expectation, which will perform better here. We'll use "
+                        "the BasicAer qasm backend for this expectation to avoid having to "
+                        "construct the %dx%d operator matrix.",
+                        operator.num_qubits,
+                        2**operator.num_qubits,
+                        2**operator.num_qubits,
+                    )
+                    backend_to_check = BasicAer.get_backend("qasm_simulator")
 
             # If the user specified Aer qasm backend and is using a
             # Pauli operator, use the Aer fast expectation if we are including such

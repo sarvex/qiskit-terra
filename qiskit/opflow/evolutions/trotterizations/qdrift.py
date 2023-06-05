@@ -62,12 +62,10 @@ class QDrift(TrotterizationBase):
         if isinstance(operator, PauliSumOp):
             operator_iter = operator
             coeffs = operator.primitive.coeffs
-            coeff = operator.coeff
         else:
             operator_iter = cast(List[PrimitiveOp], operator.oplist)
             coeffs = [op.coeff for op in operator_iter]
-            coeff = operator.coeff
-
+        coeff = operator.coeff
         # We artificially make the weights positive, TODO check approximation performance
         weights = np.abs(coeffs)
         lambd = np.sum(weights)

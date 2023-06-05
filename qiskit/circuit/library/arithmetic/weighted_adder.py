@@ -112,9 +112,7 @@ class WeightedAdder(BlueprintCircuit):
         """
         if self._weights:
             return self._weights
-        if self.num_state_qubits:
-            return [1] * self.num_state_qubits
-        return None
+        return [1] * self.num_state_qubits if self.num_state_qubits else None
 
     @weights.setter
     def weights(self, weights: List[int]) -> None:
@@ -272,39 +270,38 @@ class WeightedAdder(BlueprintCircuit):
                         circuit.x(qr_carry[j - 1])
                         circuit.cx(q_state, qr_sum[j])
                         circuit.ccx(q_state, qr_carry[j - 1], qr_sum[j])
+                elif self.num_sum_qubits == 1 or j == 0:
+                    pass  # nothing to do, since nothing to add
+                elif j == self.num_sum_qubits - 1:
+                    # compute (q_sum[j] + q_carry[j-1]) into (q_sum[j])
+                    # - controlled by q_state[i] / last qubit,
+                    # no carry needed by construction
+                    circuit.ccx(q_state, qr_carry[j - 1], qr_sum[j])
                 else:
-                    if self.num_sum_qubits == 1:
-                        pass  # nothing to do, since nothing to add
-                    elif j == 0:
-                        pass  # nothing to do, since nothing to add
-                    elif j == self.num_sum_qubits - 1:
-                        # compute (q_sum[j] + q_carry[j-1]) into (q_sum[j])
-                        # - controlled by q_state[i] / last qubit,
-                        # no carry needed by construction
-                        circuit.ccx(q_state, qr_carry[j - 1], qr_sum[j])
-                    else:
-                        # compute (q_sum[j] + q_carry[j-1]) into (q_sum[j], q_carry[j])
-                        # - controlled by q_state[i]
-                        circuit.mcx(
-                            [q_state, qr_sum[j], qr_carry[j - 1]],
-                            qr_carry[j],
-                            qr_control,
-                            mode="v-chain",
-                        )
-                        circuit.ccx(q_state, qr_carry[j - 1], qr_sum[j])
+                    # compute (q_sum[j] + q_carry[j-1]) into (q_sum[j], q_carry[j])
+                    # - controlled by q_state[i]
+                    circuit.mcx(
+                        [q_state, qr_sum[j], qr_carry[j - 1]],
+                        qr_carry[j],
+                        qr_control,
+                        mode="v-chain",
+                    )
+                    circuit.ccx(q_state, qr_carry[j - 1], qr_sum[j])
 
             # uncompute carry qubits
             for j in reversed(range(len(weight_binary))):
                 bit = weight_binary[j]
                 if bit == "1":
-                    if self.num_sum_qubits == 1:
+                    if (
+                        self.num_sum_qubits == 1
+                        or j != 0
+                        and j == self.num_sum_qubits - 1
+                    ):
                         pass
                     elif j == 0:
                         circuit.x(qr_sum[j])
                         circuit.ccx(q_state, qr_sum[j], qr_carry[j])
                         circuit.x(qr_sum[j])
-                    elif j == self.num_sum_qubits - 1:
-                        pass
                     else:
                         circuit.x(qr_carry[j - 1])
                         circuit.mcx(
@@ -315,23 +312,20 @@ class WeightedAdder(BlueprintCircuit):
                         )
                         circuit.cx(q_state, qr_carry[j])
                         circuit.x(qr_carry[j - 1])
-                else:
-                    if self.num_sum_qubits == 1:
-                        pass
-                    elif j == 0:
-                        pass
-                    elif j == self.num_sum_qubits - 1:
-                        pass
-                    else:
-                        # compute (q_sum[j] + q_carry[j-1]) into (q_sum[j], q_carry[j])
-                        # - controlled by q_state[i]
-                        circuit.x(qr_sum[j])
-                        circuit.mcx(
-                            [q_state, qr_sum[j], qr_carry[j - 1]],
-                            qr_carry[j],
-                            qr_control,
-                            mode="v-chain",
-                        )
-                        circuit.x(qr_sum[j])
+                elif (
+                    self.num_sum_qubits != 1
+                    and j != 0
+                    and j != self.num_sum_qubits - 1
+                ):
+                    # compute (q_sum[j] + q_carry[j-1]) into (q_sum[j], q_carry[j])
+                    # - controlled by q_state[i]
+                    circuit.x(qr_sum[j])
+                    circuit.mcx(
+                        [q_state, qr_sum[j], qr_carry[j - 1]],
+                        qr_carry[j],
+                        qr_control,
+                        mode="v-chain",
+                    )
+                    circuit.x(qr_sum[j])
 
         self.append(circuit.to_gate(), self.qubits)

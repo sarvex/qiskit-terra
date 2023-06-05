@@ -80,10 +80,7 @@ class BlockCollector:
 
     def _op_nodes(self):
         """Returns DAG nodes."""
-        if not self.is_dag_dependency:
-            return self.dag.op_nodes()
-        else:
-            return self.dag.get_nodes()
+        return self.dag.get_nodes() if self.is_dag_dependency else self.dag.op_nodes()
 
     def _direct_preds(self, node):
         """Returns direct predecessors of a node."""
@@ -227,12 +224,11 @@ class BlockSplitter:
                 self.union_leaders(first, index)
             self.group[self.find_leader(first)].append(node)
 
-        blocks = []
-        for index in self.leader:
-            if self.leader[index] == index:
-                blocks.append(self.group[index])
-
-        return blocks
+        return [
+            self.group[index]
+            for index in self.leader
+            if self.leader[index] == index
+        ]
 
 
 class BlockCollapser:
@@ -254,9 +250,9 @@ class BlockCollapser:
         """For each block, constructs a quantum circuit containing instructions in the block,
         then uses collapse_fn to collapse this circuit into a single operation.
         """
-        global_index_map = {wire: idx for idx, wire in enumerate(self.dag.qubits)}
-        global_index_map.update({wire: idx for idx, wire in enumerate(self.dag.clbits)})
-
+        global_index_map = {
+            wire: idx for idx, wire in enumerate(self.dag.qubits)
+        } | {wire: idx for idx, wire in enumerate(self.dag.clbits)}
         for block in blocks:
             # Find the sets of qubits/clbits used in this block (which might be much smaller
             # than the set of all qubits/clbits).
@@ -286,10 +282,9 @@ class BlockCollapser:
             for reg in cur_clregs:
                 qc.add_register(reg)
 
-            # Construct a quantum circuit from the nodes in the block, remapping the qubits.
-            wire_pos_map = {qb: ix for ix, qb in enumerate(sorted_qubits)}
-            wire_pos_map.update({qb: ix for ix, qb in enumerate(sorted_clbits)})
-
+            wire_pos_map = {qb: ix for ix, qb in enumerate(sorted_qubits)} | {
+                qb: ix for ix, qb in enumerate(sorted_clbits)
+            }
             for node in block:
                 instructions = qc.append(CircuitInstruction(node.op, node.qargs, node.cargs))
                 cond = getattr(node.op, "condition", None)

@@ -145,7 +145,6 @@ class HamiltonianPhaseEstimation:
             unitary = QuantumCircuit(evo.num_qubits)
             unitary.append(evo, unitary.qubits)
 
-            return unitary.decompose().decompose()
         else:
             # scale so that phase does not wrap.
             scaled_hamiltonian = -pe_scale.scale * hamiltonian
@@ -153,7 +152,8 @@ class HamiltonianPhaseEstimation:
             if not isinstance(unitary, QuantumCircuit):
                 unitary = unitary.to_circuit()
 
-            return unitary.decompose().decompose()
+
+        return unitary.decompose().decompose()
 
         # Decomposing twice allows some 1Q Hamiltonians to give correct results
         # when using MatrixEvolution(), that otherwise would give incorrect results.

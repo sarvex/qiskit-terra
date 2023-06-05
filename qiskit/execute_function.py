@@ -319,52 +319,49 @@ def execute(
             method=scheduling_method,
         )
 
-    if isinstance(backend, Backend):
-        start_time = time()
-        run_kwargs = {
-            "shots": shots,
-            "memory": memory,
-            "seed_simulator": seed_simulator,
-            "qubit_lo_freq": default_qubit_los,
-            "meas_lo_freq": default_meas_los,
-            "qubit_lo_range": qubit_lo_range,
-            "meas_lo_range": meas_lo_range,
-            "schedule_los": schedule_los,
-            "meas_level": meas_level,
-            "meas_return": meas_return,
-            "memory_slots": memory_slots,
-            "memory_slot_size": memory_slot_size,
-            "rep_time": rep_time,
-            "rep_delay": rep_delay,
-            "init_qubits": init_qubits,
-        }
-        for key in list(run_kwargs.keys()):
-            if not hasattr(backend.options, key):
-                if run_kwargs[key] is not None:
-                    logger.info(
-                        "%s backend doesn't support option %s so not passing that kwarg to run()",
-                        backend.name,
-                        key,
-                    )
-                del run_kwargs[key]
-            elif run_kwargs[key] is None:
-                del run_kwargs[key]
+    if not isinstance(backend, Backend):
+        raise QiskitError(f"Invalid backend type {type(backend)}")
+    start_time = time()
+    run_kwargs = {
+        "shots": shots,
+        "memory": memory,
+        "seed_simulator": seed_simulator,
+        "qubit_lo_freq": default_qubit_los,
+        "meas_lo_freq": default_meas_los,
+        "qubit_lo_range": qubit_lo_range,
+        "meas_lo_range": meas_lo_range,
+        "schedule_los": schedule_los,
+        "meas_level": meas_level,
+        "meas_return": meas_return,
+        "memory_slots": memory_slots,
+        "memory_slot_size": memory_slot_size,
+        "rep_time": rep_time,
+        "rep_delay": rep_delay,
+        "init_qubits": init_qubits,
+    }
+    for key in list(run_kwargs.keys()):
+        if not hasattr(backend.options, key):
+            if run_kwargs[key] is not None:
+                logger.info(
+                    "%s backend doesn't support option %s so not passing that kwarg to run()",
+                    backend.name,
+                    key,
+                )
+            del run_kwargs[key]
+        elif run_kwargs[key] is None:
+            del run_kwargs[key]
 
-        if parameter_binds:
-            run_kwargs["parameter_binds"] = parameter_binds
-        run_kwargs.update(run_config)
-        job = backend.run(experiments, **run_kwargs)
-        end_time = time()
-        _log_submission_time(start_time, end_time)
-    else:
-        raise QiskitError("Invalid backend type %s" % type(backend))
+    if parameter_binds:
+        run_kwargs["parameter_binds"] = parameter_binds
+    run_kwargs |= run_config
+    job = backend.run(experiments, **run_kwargs)
+    end_time = time()
+    _log_submission_time(start_time, end_time)
     return job
 
 
 def _check_conflicting_argument(**kargs):
-    conflicting_args = [arg for arg, value in kargs.items() if value]
-    if conflicting_args:
+    if conflicting_args := [arg for arg, value in kargs.items() if value]:
         raise QiskitError(
-            "The parameters pass_manager conflicts with the following "
-            "parameter(s): {}.".format(", ".join(conflicting_args))
+            f'The parameters pass_manager conflicts with the following parameter(s): {", ".join(conflicting_args)}.'
         )

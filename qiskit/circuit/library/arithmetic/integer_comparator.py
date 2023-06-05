@@ -196,7 +196,6 @@ class IntegerComparator(BlueprintCircuit):
         if self.value <= 0:  # condition always satisfied for non-positive values
             if self._geq:  # otherwise the condition is never satisfied
                 circuit.x(q_compare)
-        # condition never satisfied for values larger than or equal to 2^n
         elif self.value < pow(2, self.num_state_qubits):
 
             if self.num_state_qubits > 1:
@@ -212,15 +211,14 @@ class IntegerComparator(BlueprintCircuit):
                             )
                         else:
                             circuit.ccx(qr_state[i], qr_ancilla[i - 1], qr_ancilla[i])
+                    elif twos[i] == 1:
+                        # OR needs the result argument as qubit not register, thus
+                        # access the index [0]
+                        circuit.compose(
+                            OR(2), [qr_state[i], qr_ancilla[i - 1], q_compare], inplace=True
+                        )
                     else:
-                        if twos[i] == 1:
-                            # OR needs the result argument as qubit not register, thus
-                            # access the index [0]
-                            circuit.compose(
-                                OR(2), [qr_state[i], qr_ancilla[i - 1], q_compare], inplace=True
-                            )
-                        else:
-                            circuit.ccx(qr_state[i], qr_ancilla[i - 1], q_compare)
+                        circuit.ccx(qr_state[i], qr_ancilla[i - 1], q_compare)
 
                 # flip result bit if geq flag is false
                 if not self._geq:
@@ -231,13 +229,12 @@ class IntegerComparator(BlueprintCircuit):
                     if i == 0:
                         if twos[i] == 1:
                             circuit.cx(qr_state[i], qr_ancilla[i])
+                    elif twos[i] == 1:
+                        circuit.compose(
+                            OR(2), [qr_state[i], qr_ancilla[i - 1], qr_ancilla[i]], inplace=True
+                        )
                     else:
-                        if twos[i] == 1:
-                            circuit.compose(
-                                OR(2), [qr_state[i], qr_ancilla[i - 1], qr_ancilla[i]], inplace=True
-                            )
-                        else:
-                            circuit.ccx(qr_state[i], qr_ancilla[i - 1], qr_ancilla[i])
+                        circuit.ccx(qr_state[i], qr_ancilla[i - 1], qr_ancilla[i])
             else:
 
                 # num_state_qubits == 1 and value == 1:
@@ -247,8 +244,7 @@ class IntegerComparator(BlueprintCircuit):
                 if not self._geq:
                     circuit.x(q_compare)
 
-        else:
-            if not self._geq:  # otherwise the condition is never satisfied
-                circuit.x(q_compare)
+        elif not self._geq:  # otherwise the condition is never satisfied
+            circuit.x(q_compare)
 
         self.append(circuit.to_gate(), self.qubits)

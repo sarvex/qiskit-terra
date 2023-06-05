@@ -133,14 +133,13 @@ class NumPyEigensolver(Eigensolver):
                 eigvec = np.zeros((op_matrix.shape[0], self._k))
                 for i, idx in enumerate(indices):
                     eigvec[idx, i] = 1.0
+            elif self._k >= 2**operator.num_qubits - 1:
+                logger.debug(
+                    "SciPy doesn't support to get all eigenvalues, using NumPy instead."
+                )
+                eigval, eigvec = self._solve_dense(operator.to_matrix())
             else:
-                if self._k >= 2**operator.num_qubits - 1:
-                    logger.debug(
-                        "SciPy doesn't support to get all eigenvalues, using NumPy instead."
-                    )
-                    eigval, eigvec = self._solve_dense(operator.to_matrix())
-                else:
-                    eigval, eigvec = self._solve_sparse(op_matrix, self._k)
+                eigval, eigvec = self._solve_sparse(op_matrix, self._k)
         else:
             # Sparse SciPy matrix not supported, use dense NumPy computation.
             eigval, eigvec = self._solve_dense(operator.to_matrix())
@@ -275,11 +274,7 @@ class NumPyEigensolver(Eigensolver):
             filt_aux_op_vals = []
             count = 0
             for i, (eigval, eigvec) in enumerate(zip(eigvals, eigvecs)):
-                if aux_op_vals is not None:
-                    aux_op_val = aux_op_vals[i]
-                else:
-                    aux_op_val = None
-
+                aux_op_val = aux_op_vals[i] if aux_op_vals is not None else None
                 if self._filter_criterion(eigvec, eigval, aux_op_val):
                     count += 1
                     filt_eigvecs.append(eigvec)

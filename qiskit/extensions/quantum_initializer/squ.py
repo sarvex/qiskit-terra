@@ -64,8 +64,8 @@ class SingleQubitUnitary(Gate):
         Note that the resulting gate has an empty ``params`` property.
         """
         inverse_gate = Gate(
-            name=self.name + "_dg", num_qubits=self.num_qubits, params=[]
-        )  # removing the params because arrays are deprecated
+            name=f"{self.name}_dg", num_qubits=self.num_qubits, params=[]
+        )
 
         definition = QuantumCircuit(*self.definition.qregs)
         for inst in reversed(self._definition):

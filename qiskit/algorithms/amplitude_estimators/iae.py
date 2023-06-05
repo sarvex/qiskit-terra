@@ -234,7 +234,7 @@ class IterativeAmplitudeEstimation(AmplitudeEstimator):
             scaling -= 4
 
         # if we do not find a feasible k, return the old one
-        return int(k), upper_half_circle
+        return k, upper_half_circle
 
     def construct_circuit(
         self, estimation_problem: EstimationProblem, k: int = 0, measurement: bool = False
@@ -300,11 +300,11 @@ class IterativeAmplitudeEstimation(AmplitudeEstimator):
             otherwise Pr(measure '1' in the last qubit).
         """
         if isinstance(counts_or_statevector, dict):
-            one_counts = 0
-            for state, counts in counts_or_statevector.items():
-                if problem.is_good_state(state):
-                    one_counts += counts
-
+            one_counts = sum(
+                counts
+                for state, counts in counts_or_statevector.items()
+                if problem.is_good_state(state)
+            )
             return int(one_counts), one_counts / sum(counts_or_statevector.values())
         else:
             statevector = counts_or_statevector
@@ -457,16 +457,16 @@ class IterativeAmplitudeEstimation(AmplitudeEstimator):
                 # track number of Q-oracle calls
                 num_oracle_queries += shots * k
 
-                # if on the previous iterations we have K_{i-1} == K_i, we sum these samples up
-                j = 1  # number of times we stayed fixed at the same K
                 round_shots = shots
                 round_one_counts = one_counts
                 if num_iterations > 1:
+                    # if on the previous iterations we have K_{i-1} == K_i, we sum these samples up
+                    j = 1  # number of times we stayed fixed at the same K
                     while (
                         powers[num_iterations - j] == powers[num_iterations]
                         and num_iterations >= j + 1
                     ):
-                        j = j + 1
+                        j += 1
                         round_shots += shots
                         round_one_counts += num_one_shots[-j]
 

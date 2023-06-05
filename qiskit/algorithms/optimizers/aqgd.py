@@ -317,7 +317,7 @@ class AQGD(Optimizer):
         for (eta, mom_coeff) in zip(self._eta, self._momenta_coeff):
             logger.info("Epoch: %4d | Stepsize: %6.4f | Momentum: %6.4f", epoch, eta, mom_coeff)
 
-            sum_max_iters = sum(self._maxiter[0 : epoch + 1])
+            sum_max_iters = sum(self._maxiter[:epoch + 1])
             while iter_count < sum_max_iters:
                 # update the iteration count
                 iter_count += 1

@@ -212,14 +212,13 @@ class TrotterQRTE(RealEvolver):
             PauliEvolutionGate(hamiltonian, evolution_problem.time, synthesis=self._product_formula)
         )
 
-        if evolution_problem.initial_state is not None:
-            initial_state = evolution_problem.initial_state
-            if isinstance(initial_state, QuantumCircuit):
-                initial_state = StateFn(initial_state)
-            evolved_state = evolution_gate @ initial_state
-
-        else:
+        if evolution_problem.initial_state is None:
             raise ValueError("``initial_state`` must be provided in the EvolutionProblem.")
+
+        initial_state = evolution_problem.initial_state
+        if isinstance(initial_state, QuantumCircuit):
+            initial_state = StateFn(initial_state)
+        evolved_state = evolution_gate @ initial_state
 
         evaluated_aux_ops = None
         if evolution_problem.aux_operators is not None:

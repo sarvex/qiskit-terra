@@ -226,9 +226,7 @@ class BaseStateFidelity(ABC):
         elif len(values_1[0]) == 0:
             values = list(values_2)
         else:
-            for (val_1, val_2) in zip(values_1, values_2):
-                values.append(val_1 + val_2)
-
+            values.extend(val_1 + val_2 for val_1, val_2 in zip(values_1, values_2))
         return values
 
     @abstractmethod

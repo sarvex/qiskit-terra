@@ -121,8 +121,7 @@ class PiecewiseChebyshev(BlueprintCircuit):
             valid = False
             if raise_on_failure:
                 raise CircuitError(
-                    "Not enough qubits in the circuit, need at least "
-                    "{}.".format(self.num_state_qubits + 1)
+                    f"Not enough qubits in the circuit, need at least {self.num_state_qubits + 1}."
                 )
 
         return valid
@@ -237,10 +236,9 @@ class PiecewiseChebyshev(BlueprintCircuit):
         if breakpoints == [0]:
             breakpoints = [0, 2**self.num_state_qubits]
 
-        num_intervals = len(breakpoints)
-
         # Calculate the polynomials
         polynomials = []
+        num_intervals = len(breakpoints)
         for i in range(0, num_intervals - 1):
             # Calculate the polynomial approximating the function on the current interval
             try:
@@ -258,15 +256,12 @@ class PiecewiseChebyshev(BlueprintCircuit):
                     polynomials.append(poly.tolist())
             except ValueError as err:
                 raise TypeError(
-                    " <lambda>() missing 1 required positional argument: '"
-                    + self.f_x.__code__.co_varnames[0]
-                    + "'."
-                    + " Constant functions should be specified as 'f_x = constant'."
+                    f" <lambda>() missing 1 required positional argument: '{self.f_x.__code__.co_varnames[0]}'. Constant functions should be specified as 'f_x = constant'."
                 ) from err
 
         # If the last breakpoint is < 2 ** num_qubits, add the identity polynomial
         if breakpoints[-1] < 2**self.num_state_qubits:
-            polynomials = polynomials + [[2 * np.arcsin(1)]]
+            polynomials += [[2 * np.arcsin(1)]]
 
         # If the first breakpoint is > 0, add the identity polynomial
         if breakpoints[0] > 0:

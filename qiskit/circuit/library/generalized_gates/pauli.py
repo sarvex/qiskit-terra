@@ -72,14 +72,13 @@ class PauliGate(Gate):
         return Pauli(self.params[0]).__array__(dtype=dtype)
 
     def validate_parameter(self, parameter):
-        if isinstance(parameter, str):
-            if all(c in ["I", "X", "Y", "Z"] for c in parameter):
-                return parameter
-            else:
-                raise CircuitError(
-                    f"Parameter string {parameter} should contain only 'I', 'X', 'Y', 'Z' characters"
-                )
-        else:
+        if not isinstance(parameter, str):
             raise CircuitError(
                 f"Parameter {parameter} should be a string of 'I', 'X', 'Y', 'Z' characters"
+            )
+        if all(c in ["I", "X", "Y", "Z"] for c in parameter):
+            return parameter
+        else:
+            raise CircuitError(
+                f"Parameter string {parameter} should contain only 'I', 'X', 'Y', 'Z' characters"
             )

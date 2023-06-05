@@ -300,7 +300,7 @@ def _generate_gray_code(num_bits):
     result = [0]
     for i in range(num_bits):
         result += [x + 2**i for x in reversed(result)]
-    return [format(x, "0%sb" % num_bits) for x in result]
+    return [format(x, f"0{num_bits}b") for x in result]
 
 
 def _gray_code_chain(q, num_ctrl_qubits, gate):
@@ -327,17 +327,16 @@ def _gray_code_chain(q, num_ctrl_qubits, gate):
 
         # find changed bit
         comp = [i != j for i, j in zip(pattern, last_pattern)]
-        if True in comp:
-            pos = comp.index(True)
-        else:
-            pos = None
+        pos = comp.index(True) if True in comp else None
         if pos is not None:
             if pos != lm_pos:
                 rule.append((CXGate(), [q_controls[pos], q_controls[lm_pos]], []))
             else:
                 indices = [i for i, x in enumerate(pattern) if x == "1"]
-                for idx in indices[1:]:
-                    rule.append((CXGate(), [q_controls[idx], q_controls[lm_pos]], []))
+                rule.extend(
+                    (CXGate(), [q_controls[idx], q_controls[lm_pos]], [])
+                    for idx in indices[1:]
+                )
         # check parity
         if pattern.count("1") % 2 == 0:
             # inverse

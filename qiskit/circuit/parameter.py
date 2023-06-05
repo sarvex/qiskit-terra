@@ -56,11 +56,7 @@ class Parameter(ParameterExpression):
         # or __eq__ functions.
         obj = object.__new__(cls)
 
-        if uuid is None:
-            obj._uuid = uuid4()
-        else:
-            obj._uuid = uuid
-
+        obj._uuid = uuid4() if uuid is None else uuid
         obj._hash = hash(obj._uuid)
         return obj
 
@@ -95,8 +91,7 @@ class Parameter(ParameterExpression):
         if allow_unknown_parameters:
             return self
         raise CircuitError(
-            "Cannot bind Parameters ({}) not present in "
-            "expression.".format([str(p) for p in parameter_map])
+            f"Cannot bind Parameters ({[str(p) for p in parameter_map]}) not present in expression."
         )
 
     @property

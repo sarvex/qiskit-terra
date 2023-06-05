@@ -80,7 +80,7 @@ class DAGDepNode:
     def op(self):
         """Returns the Instruction object corresponding to the op for the node, else None"""
         if not self.type or self.type != "op":
-            raise QiskitError("The node %s is not an op node" % (str(self)))
+            raise QiskitError(f"The node {str(self)} is not an op node")
         return self._op
 
     @op.setter
@@ -121,10 +121,10 @@ class DAGDepNode:
                 if node1.name == node2.name:
                     if node1._qargs == node2._qargs:
                         if node1.cargs == node2.cargs:
-                            if node1.type == "op":
-                                if getattr(node1._op, "condition", None) != getattr(
+                            if getattr(node1._op, "condition", None) != getattr(
                                     node2._op, "condition", None
                                 ):
+                                if node1.type == "op":
                                     return False
                             return True
         return False

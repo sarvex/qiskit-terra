@@ -313,14 +313,12 @@ class PVQD(RealTimeEvolver):
         p_0 = list(params.values())[0]
         if isinstance(p_0, (list, np.ndarray)):
             num_parameterizations = len(p_0)
-            param_bindings = [
+            return [
                 {param: value_list[i] for param, value_list in params.items()}  # type: ignore
                 for i in range(num_parameterizations)
             ]
         else:
-            param_bindings = [params]
-
-        return param_bindings
+            return [params]
 
     def evolve(self, evolution_problem: TimeEvolutionProblem) -> TimeEvolutionResult:
         r"""Perform real time evolution :math:`\exp(-i t H)|\Psi\rangle`.

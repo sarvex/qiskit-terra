@@ -114,14 +114,12 @@ class CircuitSampler(ConverterBase):
         """
         if self._statevector and not is_statevector_backend(self.quantum_instance.backend):
             raise ValueError(
-                "Statevector mode for circuit sampling requires statevector "
-                "backend, not {}.".format(self.quantum_instance.backend)
+                f"Statevector mode for circuit sampling requires statevector backend, not {self.quantum_instance.backend}."
             )
 
         if self._param_qobj and not is_aer_provider(self.quantum_instance.backend):
             raise ValueError(
-                "Parameterized Qobj mode requires Aer "
-                "backend, not {}.".format(self.quantum_instance.backend)
+                f"Parameterized Qobj mode requires Aer backend, not {self.quantum_instance.backend}."
             )
 
     @property
@@ -312,24 +310,23 @@ class CircuitSampler(ConverterBase):
         else:
             circuit_sfns = list(self._circuit_ops_cache.values())
 
-        if param_bindings is not None:
-            if self._param_qobj:
-                start_time = time()
-                ready_circs = self._prepare_parameterized_run_config(param_bindings)
-                end_time = time()
-                logger.debug("Parameter conversion %.5f (ms)", (end_time - start_time) * 1000)
-            else:
-                start_time = time()
-                ready_circs = [
-                    circ.assign_parameters(_filter_params(circ, binding))
-                    for circ in self._transpiled_circ_cache
-                    for binding in param_bindings
-                ]
-                end_time = time()
-                logger.debug("Parameter binding %.5f (ms)", (end_time - start_time) * 1000)
-        else:
+        if param_bindings is None:
             ready_circs = self._transpiled_circ_cache
 
+        elif self._param_qobj:
+            start_time = time()
+            ready_circs = self._prepare_parameterized_run_config(param_bindings)
+            end_time = time()
+            logger.debug("Parameter conversion %.5f (ms)", (end_time - start_time) * 1000)
+        else:
+            start_time = time()
+            ready_circs = [
+                circ.assign_parameters(_filter_params(circ, binding))
+                for circ in self._transpiled_circ_cache
+                for binding in param_bindings
+            ]
+            end_time = time()
+            logger.debug("Parameter binding %.5f (ms)", (end_time - start_time) * 1000)
         # run transpiler passes on bound circuits
         if self._transpile_before_bind and self.quantum_instance.bound_pass_manager is not None:
             ready_circs = self.quantum_instance.transpile(

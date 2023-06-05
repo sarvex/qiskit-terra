@@ -247,9 +247,7 @@ class Optimizer(ABC):
             if isinstance(todos_results, float):
                 grad.append((todos_results - forig) / epsilon)
             else:
-                for todor in todos_results:
-                    grad.append((todor - forig) / epsilon)
-
+                grad.extend((todor - forig) / epsilon for todor in todos_results)
         return np.array(grad)
 
     @staticmethod
@@ -273,10 +271,11 @@ class Optimizer(ABC):
     def setting(self):
         """Return setting"""
         ret = f"Optimizer: {self.__class__.__name__}\n"
-        params = ""
-        for key, value in self.__dict__.items():
-            if key[0] == "_":
-                params += f"-- {key[1:]}: {value}\n"
+        params = "".join(
+            f"-- {key[1:]}: {value}\n"
+            for key, value in self.__dict__.items()
+            if key[0] == "_"
+        )
         ret += f"{params}"
         return ret
 

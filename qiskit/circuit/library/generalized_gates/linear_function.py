@@ -156,8 +156,9 @@ class LinearFunction(Gate):
         has exactly one 1.
         """
         linear = self.linear
-        perm = np.all(np.sum(linear, axis=0) == 1) and np.all(np.sum(linear, axis=1) == 1)
-        return perm
+        return np.all(np.sum(linear, axis=0) == 1) and np.all(
+            np.sum(linear, axis=1) == 1
+        )
 
     def permutation_pattern(self):
         """This method first checks if a linear function is a permutation and raises a

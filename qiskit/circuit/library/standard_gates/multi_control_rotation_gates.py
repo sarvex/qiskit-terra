@@ -61,10 +61,7 @@ def _apply_mcu_graycode(circuit, theta, phi, lam, ctls, tgt, use_basis_gates):
 
         # find changed bit
         comp = [i != j for i, j in zip(pattern, last_pattern)]
-        if True in comp:
-            pos = comp.index(True)
-        else:
-            pos = None
+        pos = comp.index(True) if True in comp else None
         if pos is not None:
             if pos != lm_pos:
                 circuit.cx(ctls[pos], ctls[lm_pos])
@@ -299,11 +296,7 @@ def mcry(
     if mode is None:
         # if enough ancillary qubits are provided, use the 'v-chain' method
         additional_vchain = MCXGate.get_num_ancilla_qubits(len(control_qubits), "v-chain")
-        if len(ancillary_qubits) >= additional_vchain:
-            mode = "basic"
-        else:
-            mode = "noancilla"
-
+        mode = "basic" if len(ancillary_qubits) >= additional_vchain else "noancilla"
     if mode == "basic":
         self.ry(theta / 2, q_target)
         self.mcx(q_controls, q_target, q_ancillae, mode="v-chain")

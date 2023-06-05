@@ -204,26 +204,18 @@ class ReverseQGT(BaseQGT):
                 iloc = remap[i]
                 for j in range(num_parameters):
                     jloc = remap[j]
-                    if i <= j:
-                        qgt[iloc, jloc] += metric[i, j]
-                    else:
-                        qgt[iloc, jloc] += np.conj(metric[j, i])
-
+                    qgt[iloc, jloc] += metric[i, j] if i <= j else np.conj(metric[j, i])
                     qgt[iloc, jloc] -= np.conj(phase_fixes[i]) * phase_fixes[j]
 
             # append and cast to real/imag if required
             qgts.append(self._to_derivtype(qgt))
 
-        result = QGTResult(qgts, self.derivative_type, metadata, options=None)
-        return result
+        return QGTResult(qgts, self.derivative_type, metadata, options=None)
 
     def _to_derivtype(self, qgt):
         if self.derivative_type == DerivativeType.REAL:
             return np.real(qgt)
-        if self.derivative_type == DerivativeType.IMAG:
-            return np.imag(qgt)
-
-        return qgt
+        return np.imag(qgt) if self.derivative_type == DerivativeType.IMAG else qgt
 
 
 def _l_term(coeffs_i, states_i, coeffs_j, states_j):

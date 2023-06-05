@@ -145,9 +145,6 @@ class NLocal(BlueprintCircuit):
         self._initial_state_circuit: QuantumCircuit | None = None
         self._bounds: list[tuple[float | None, float | None]] | None = None
 
-        if int(reps) != reps:
-            raise TypeError("The value of reps should be int")
-
         if reps < 0:
             raise ValueError("The value of reps should be larger than or equal to 0")
 
@@ -403,10 +400,7 @@ class NLocal(BlueprintCircuit):
             and len(parameters) != self.num_parameters_settable
         ):
             raise ValueError(
-                "The length of ordered parameters must be equal to the number of "
-                "settable parameters in the circuit ({}), but is {}".format(
-                    self.num_parameters_settable, len(parameters)
-                )
+                f"The length of ordered parameters must be equal to the number of settable parameters in the circuit ({self.num_parameters_settable}), but is {len(parameters)}"
             )
         self._ordered_parameters = parameters
         self._invalidate()
@@ -444,9 +438,7 @@ class NLocal(BlueprintCircuit):
             for j, block in enumerate(self.entanglement_blocks):
                 entangler_map = self.get_entangler_map(i, j, block.num_qubits)
                 entangled_qubits.update([idx for indices in entangler_map for idx in indices])
-        unentangled_qubits = set(range(self.num_qubits)) - entangled_qubits
-
-        return unentangled_qubits
+        return set(range(self.num_qubits)) - entangled_qubits
 
     @property
     def num_parameters_settable(self) -> int:
@@ -525,10 +517,11 @@ class NLocal(BlueprintCircuit):
             The class name and the attributes/parameters of the instance as ``str``.
         """
         ret = f"NLocal: {self.__class__.__name__}\n"
-        params = ""
-        for key, value in self.__dict__.items():
-            if key[0] == "_":
-                params += f"-- {key[1:]}: {value}\n"
+        params = "".join(
+            f"-- {key[1:]}: {value}\n"
+            for key, value in self.__dict__.items()
+            if key[0] == "_"
+        )
         ret += f"{params}"
         return ret
 
@@ -750,7 +743,7 @@ class NLocal(BlueprintCircuit):
                 self.num_qubits = num_qubits
 
         # modify the circuit accordingly
-        if front is False and self._is_built:
+        if not front and self._is_built:
             if self._insert_barriers and len(self.data) > 0:
                 self.barrier()
 
@@ -1001,11 +994,8 @@ def get_entangler_map(
     if entanglement == "full":
         return list(combinations(list(range(n)), m))
     elif entanglement == "reverse_linear":
-        # reverse linear connectivity. In the case of m=2 and the entanglement_block='cx'
-        # then it's equivalent to 'full' entanglement
-        reverse = [tuple(range(n - i - m, n - i)) for i in range(n - m + 1)]
-        return reverse
-    elif entanglement in ["linear", "circular", "sca", "pairwise"]:
+        return [tuple(range(n - i - m, n - i)) for i in range(n - m + 1)]
+    elif entanglement in {"linear", "circular", "sca", "pairwise"}:
         linear = [tuple(range(i, i + m)) for i in range(n - m + 1)]
         # if the number of block qubits is 1, we don't have to add the 'circular' part
         if entanglement == "linear" or m == 1:
@@ -1015,21 +1005,12 @@ def get_entangler_map(
             return linear[::2] + linear[1::2]
 
         # circular equals linear plus top-bottom entanglement (if there's space for it)
-        if n > m:
-            circular = [tuple(range(n - m + 1, n)) + (0,)] + linear
-        else:
-            circular = linear
+        circular = [tuple(range(n - m + 1, n)) + (0,)] + linear if n > m else linear
         if entanglement == "circular":
             return circular
 
         # sca is circular plus shift and reverse
         shifted = circular[-offset:] + circular[:-offset]
-        if offset % 2 == 1:  # if odd, reverse the qubit indices
-            sca = [ind[::-1] for ind in shifted]
-        else:
-            sca = shifted
-
-        return sca
-
+        return [ind[::-1] for ind in shifted] if offset % 2 == 1 else shifted
     else:
         raise ValueError(f"Unsupported entanglement type: {entanglement}")

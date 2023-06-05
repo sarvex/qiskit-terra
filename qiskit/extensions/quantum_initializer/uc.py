@@ -76,7 +76,7 @@ class UCGate(Gate):
         if not isinstance(gate_list, list):
             raise QiskitError("The single-qubit unitaries are not provided in a list.")
         for gate in gate_list:
-            if not gate.shape == (2, 2):
+            if gate.shape != (2, 2):
                 raise QiskitError("The dimension of a controlled gate is not equal to (2,2).")
         if not gate_list:
             raise QiskitError("The gate list cannot be empty.")
@@ -104,8 +104,8 @@ class UCGate(Gate):
         gates but simply inverts the existing decomposition.
         """
         inverse_gate = Gate(
-            name=self.name + "_dg", num_qubits=self.num_qubits, params=[]
-        )  # removing the params because arrays are deprecated
+            name=f"{self.name}_dg", num_qubits=self.num_qubits, params=[]
+        )
 
         definition = QuantumCircuit(*self.definition.qregs)
         for inst in reversed(self._definition):
@@ -169,7 +169,7 @@ class UCGate(Gate):
             num_trailing_zeros = len(binary_rep) - len(binary_rep.rstrip("0"))
             q_contr_index = num_trailing_zeros
             # Add C-NOT gate
-            if not i == len(single_qubit_gates) - 1:
+            if i != len(single_qubit_gates) - 1:
                 circuit.cx(q_controls[q_contr_index], q_target)
                 circuit.global_phase -= 0.25 * np.pi
         if not self.up_to_diagonal:

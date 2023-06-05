@@ -44,10 +44,7 @@ class UserConfig:
             filename (str): The path to the user config file. If one isn't
                 specified, ~/.qiskit/settings.conf is used.
         """
-        if filename is None:
-            self.filename = DEFAULT_FILENAME
-        else:
-            self.filename = filename
+        self.filename = DEFAULT_FILENAME if filename is None else filename
         self.settings = {}
         self.config_parser = configparser.ConfigParser()
 
@@ -57,20 +54,18 @@ class UserConfig:
             return
         self.config_parser.read(self.filename)
         if "default" in self.config_parser.sections():
-            # Parse circuit_drawer
-            circuit_drawer = self.config_parser.get("default", "circuit_drawer", fallback=None)
-            if circuit_drawer:
+            if circuit_drawer := self.config_parser.get(
+                "default", "circuit_drawer", fallback=None
+            ):
                 if circuit_drawer not in ["text", "mpl", "latex", "latex_source", "auto"]:
                     raise exceptions.QiskitUserConfigError(
-                        "%s is not a valid circuit drawer backend. Must be "
-                        "either 'text', 'mpl', 'latex', 'latex_source', or "
-                        "'auto'." % circuit_drawer
+                        f"{circuit_drawer} is not a valid circuit drawer backend. Must be either 'text', 'mpl', 'latex', 'latex_source', or 'auto'."
                     )
                 self.settings["circuit_drawer"] = circuit_drawer
 
-            # Parse state_drawer
-            state_drawer = self.config_parser.get("default", "state_drawer", fallback=None)
-            if state_drawer:
+            if state_drawer := self.config_parser.get(
+                "default", "state_drawer", fallback=None
+            ):
                 valid_state_drawers = [
                     "repr",
                     "text",
@@ -81,38 +76,32 @@ class UserConfig:
                     "bloch",
                 ]
                 if state_drawer not in valid_state_drawers:
-                    valid_choices_string = "', '".join(c for c in valid_state_drawers)
+                    valid_choices_string = "', '".join(valid_state_drawers)
                     raise exceptions.QiskitUserConfigError(
                         f"'{state_drawer}' is not a valid state drawer backend. "
                         f"Choose from: '{valid_choices_string}'"
                     )
                 self.settings["state_drawer"] = state_drawer
 
-            # Parse circuit_mpl_style
-            circuit_mpl_style = self.config_parser.get(
+            if circuit_mpl_style := self.config_parser.get(
                 "default", "circuit_mpl_style", fallback=None
-            )
-            if circuit_mpl_style:
+            ):
                 if not isinstance(circuit_mpl_style, str):
                     warn(
-                        "%s is not a valid mpl circuit style. Must be "
-                        "a text string. Will not load style." % circuit_mpl_style,
+                        f"{circuit_mpl_style} is not a valid mpl circuit style. Must be a text string. Will not load style.",
                         UserWarning,
                         2,
                     )
                 self.settings["circuit_mpl_style"] = circuit_mpl_style
 
-            # Parse circuit_mpl_style_path
-            circuit_mpl_style_path = self.config_parser.get(
+            if circuit_mpl_style_path := self.config_parser.get(
                 "default", "circuit_mpl_style_path", fallback=None
-            )
-            if circuit_mpl_style_path:
+            ):
                 cpath_list = circuit_mpl_style_path.split(":")
                 for path in cpath_list:
                     if not os.path.exists(os.path.expanduser(path)):
                         warn(
-                            "%s is not a valid circuit mpl style path."
-                            " Correct the path in ~/.qiskit/settings.conf." % path,
+                            f"{path} is not a valid circuit mpl style path. Correct the path in ~/.qiskit/settings.conf.",
                             UserWarning,
                             2,
                         )
@@ -196,8 +185,8 @@ def set_config(key, value, section=None, file_path=None):
         "num_processes",
     }
 
-    if section in [None, "default"]:
-        if key not in valid_config:
+    if key not in valid_config:
+        if section in [None, "default"]:
             raise exceptions.QiskitUserConfigError(f"{key} is not a valid user config.")
 
     config = configparser.ConfigParser()

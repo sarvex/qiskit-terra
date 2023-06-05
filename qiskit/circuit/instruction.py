@@ -158,9 +158,7 @@ class Instruction(Operation):
             str: A representation of the Instruction instance with the name,
                  number of qubits, classical bits and params( if any )
         """
-        return "Instruction(name='{}', num_qubits={}, num_clbits={}, params={})".format(
-            self.name, self.num_qubits, self.num_clbits, self.params
-        )
+        return f"Instruction(name='{self.name}', num_qubits={self.num_qubits}, num_clbits={self.num_clbits}, params={self.params})"
 
     def soft_compare(self, other: "Instruction") -> bool:
         """
@@ -342,7 +340,7 @@ class Instruction(Operation):
         if not self._definition:
             return self.copy()
 
-        reverse_inst = self.copy(name=self.name + "_reverse")
+        reverse_inst = self.copy(name=f"{self.name}_reverse")
         reversed_definition = self._definition.copy_empty_like()
         for inst in reversed(self._definition):
             reversed_definition.append(inst.operation.reverse_ops(), inst.qubits, inst.clbits)
@@ -366,14 +364,11 @@ class Instruction(Operation):
                 and an inverse has not been implemented for it.
         """
         if self.definition is None:
-            raise CircuitError("inverse() not implemented for %s." % self.name)
+            raise CircuitError(f"inverse() not implemented for {self.name}.")
 
         from qiskit.circuit import Gate  # pylint: disable=cyclic-import
 
-        if self.name.endswith("_dg"):
-            name = self.name[:-3]
-        else:
-            name = self.name + "_dg"
+        name = self.name[:-3] if self.name.endswith("_dg") else f"{self.name}_dg"
         if self.num_clbits:
             inverse_gate = Instruction(
                 name=name,

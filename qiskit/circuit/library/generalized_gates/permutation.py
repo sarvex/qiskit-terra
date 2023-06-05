@@ -67,17 +67,17 @@ class Permutation(QuantumCircuit):
                circuit = Permutation(5, A)
                _generate_circuit_library_visualization(circuit.decompose())
         """
-        if pattern is not None:
-            if sorted(pattern) != list(range(num_qubits)):
-                raise CircuitError(
-                    "Permutation pattern must be some ordering of 0..num_qubits-1 in a list."
-                )
-            pattern = np.array(pattern)
-        else:
+        if pattern is None:
             rng = np.random.default_rng(seed)
             pattern = np.arange(num_qubits)
             rng.shuffle(pattern)
 
+        elif sorted(pattern) != list(range(num_qubits)):
+            raise CircuitError(
+                "Permutation pattern must be some ordering of 0..num_qubits-1 in a list."
+            )
+        else:
+            pattern = np.array(pattern)
         name = "permutation_" + np.array_str(pattern).replace(" ", ",")
 
         circuit = QuantumCircuit(num_qubits, name=name)

@@ -88,10 +88,10 @@ class OR(QuantumCircuit):
             qr_ancilla = AncillaRegister(0)
 
         circuit.x(qr_result)
-        if len(flip_qubits) > 0:
+        if flip_qubits:
             circuit.x(flip_qubits)
         circuit.mcx(control_qubits, qr_result[:], qr_ancilla[:], mode=mcx_mode)
-        if len(flip_qubits) > 0:
+        if flip_qubits:
             circuit.x(flip_qubits)
 
         super().__init__(*circuit.qregs, name="or")

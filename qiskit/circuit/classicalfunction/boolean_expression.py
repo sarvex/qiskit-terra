@@ -40,7 +40,9 @@ class BooleanExpression(ClassicalElement):
             expression, var_order=var_order
         )
 
-        short_expr_for_name = (expression[:10] + "...") if len(expression) > 13 else expression
+        short_expr_for_name = (
+            f"{expression[:10]}..." if len(expression) > 13 else expression
+        )
         num_qubits = (
             self._tweedledum_bool_expression.num_outputs()
             + self._tweedledum_bool_expression.num_inputs()
@@ -60,9 +62,7 @@ class BooleanExpression(ClassicalElement):
         """
         from tweedledum import BitVec  # pylint: disable=import-error
 
-        bits = []
-        for bit in bitstring:
-            bits.append(BitVec(1, bit))
+        bits = [BitVec(1, bit) for bit in bitstring]
         return bool(self._tweedledum_bool_expression.simulate(*bits))
 
     def synth(
@@ -81,11 +81,7 @@ class BooleanExpression(ClassicalElement):
         Returns:
             QuantumCircuit: A circuit implementing the logic network.
         """
-        if registerless:
-            qregs = None
-        else:
-            qregs = None  # TODO: Probably from self._tweedledum_bool_expression._signature
-
+        qregs = None
         if synthesizer is None:
             from .utils import tweedledum2qiskit  # Avoid an import cycle
             from tweedledum.synthesis import pkrm_synth  # pylint: disable=import-error
@@ -116,7 +112,7 @@ class BooleanExpression(ClassicalElement):
 
         expr_obj = cls.__new__(cls)
         if not isfile(filename):
-            raise FileNotFoundError("The file %s does not exists." % filename)
+            raise FileNotFoundError(f"The file {filename} does not exists.")
         expr_obj._tweedledum_bool_expression = BoolFunction.from_dimacs_file(filename)
 
         num_qubits = (

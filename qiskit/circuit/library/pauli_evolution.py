@@ -179,12 +179,10 @@ def _to_sparse_pauli_op(operator):
 
 def _get_default_label(operator):
     if isinstance(operator, list):
-        label = f"exp(-it ({[' + '.join(op.paulis.to_labels()) for op in operator]}))"
+        return f"exp(-it ({[' + '.join(op.paulis.to_labels()) for op in operator]}))"
     else:
-        if len(operator.paulis) == 1:
-            label = f"exp(-it {operator.paulis.to_labels()[0]})"
-        # for just a single Pauli don't add brackets around the sum
-        else:
-            label = f"exp(-it ({' + '.join(operator.paulis.to_labels())}))"
-
-    return label
+        return (
+            f"exp(-it {operator.paulis.to_labels()[0]})"
+            if len(operator.paulis) == 1
+            else f"exp(-it ({' + '.join(operator.paulis.to_labels())}))"
+        )

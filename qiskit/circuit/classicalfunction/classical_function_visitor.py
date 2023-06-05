@@ -53,11 +53,12 @@ class ClassicalFunctionVisitor(ast.NodeVisitor):
         """The function definition should have type hints"""
         if node.returns is None:
             raise ClassicalFunctionParseError("return type is needed")
-        scope = {"return": (node.returns.id, None), node.returns.id: ("type", None)}
-
-        # Extend scope with the decorator's names
-        scope.update({decorator.id: ("decorator", None) for decorator in node.decorator_list})
-
+        scope = {
+            "return": (node.returns.id, None),
+            node.returns.id: ("type", None),
+        } | {
+            decorator.id: ("decorator", None) for decorator in node.decorator_list
+        }
         from tweedledum.classical import LogicNetwork  # pylint: disable=import-error
 
         self.scopes.append(scope)
@@ -83,7 +84,7 @@ class ClassicalFunctionVisitor(ast.NodeVisitor):
         """Uses ClassicalFunctionVisitor.bitops to extend self._network"""
         bitop = ClassicalFunctionVisitor.bitops.get(type(op))
         if not bitop:
-            raise ClassicalFunctionParseError("Unknown binop.op %s" % op)
+            raise ClassicalFunctionParseError(f"Unknown binop.op {op}")
         binop = getattr(self._network, bitop)
 
         left_type, left_signal = values[0]
@@ -112,19 +113,19 @@ class ClassicalFunctionVisitor(ast.NodeVisitor):
         operand_type, operand_signal = self.visit(node.operand)
         if operand_type != "Int1":
             raise ClassicalFunctionCompilerTypeError(
-                "UntaryOp.op %s only support operation on Int1s for now" % node.op
+                f"UntaryOp.op {node.op} only support operation on Int1s for now"
             )
-        bitop = ClassicalFunctionVisitor.bitops.get(type(node.op))
-        if not bitop:
+        if bitop := ClassicalFunctionVisitor.bitops.get(type(node.op)):
+            return "Int1", getattr(self._network, bitop)(operand_signal)
+        else:
             raise ClassicalFunctionCompilerTypeError(
-                "UntaryOp.op %s does not operate with Int1 type " % node.op
+                f"UntaryOp.op {node.op} does not operate with Int1 type "
             )
-        return "Int1", getattr(self._network, bitop)(operand_signal)
 
     def visit_Name(self, node):
         """Reduce variable names."""
         if node.id not in self.scopes[-1]:
-            raise ClassicalFunctionParseError("out of scope: %s" % node.id)
+            raise ClassicalFunctionParseError(f"out of scope: {node.id}")
         return self.scopes[-1][node.id]
 
     def generic_visit(self, node):
@@ -143,7 +144,7 @@ class ClassicalFunctionVisitor(ast.NodeVisitor):
             ),
         ):
             return super().generic_visit(node)
-        raise ClassicalFunctionParseError("Unknown node: %s" % type(node))
+        raise ClassicalFunctionParseError(f"Unknown node: {type(node)}")
 
     def extend_scope(self, args_node: _ast.arguments) -> None:
         """Add the arguments to the scope"""

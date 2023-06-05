@@ -43,7 +43,7 @@ class LearningRate(Generator):
         elif isinstance(learning_rate, Generator):
             learning_rate, self._gen = tee(learning_rate)
         elif isinstance(learning_rate, (list, np.ndarray)):
-            self._gen = (eta for eta in learning_rate)
+            self._gen = iter(learning_rate)
         else:
             self._gen = learning_rate()
 

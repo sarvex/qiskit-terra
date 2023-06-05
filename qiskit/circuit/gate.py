@@ -71,16 +71,14 @@ class Gate(Instruction):
 
         # Should be diagonalized because it's a unitary.
         decomposition, unitary = schur(Operator(self).data, output="complex")
-        # Raise the diagonal entries to the specified power
-        decomposition_power = []
-
         decomposition_diagonal = decomposition.diagonal()
         # assert off-diagonal are 0
         if not np.allclose(np.diag(decomposition_diagonal), decomposition):
             raise CircuitError("The matrix is not diagonal")
 
-        for element in decomposition_diagonal:
-            decomposition_power.append(pow(element, exponent))
+        decomposition_power = [
+            pow(element, exponent) for element in decomposition_diagonal
+        ]
         # Then reconstruct the resulting gate.
         unitary_power = unitary @ np.diag(decomposition_power) @ unitary.conj().T
         return UnitaryGate(unitary_power, label=f"{self.name}^{exponent}")
@@ -153,11 +151,10 @@ class Gate(Instruction):
 
     @staticmethod
     def _broadcast_3_or_more_args(qargs: list) -> Iterator[tuple[list, list]]:
-        if all(len(qarg) == len(qargs[0]) for qarg in qargs):
-            for arg in zip(*qargs):
-                yield list(arg), []
-        else:
+        if any(len(qarg) != len(qargs[0]) for qarg in qargs):
             raise CircuitError("Not sure how to combine these qubit arguments:\n %s\n" % qargs)
+        for arg in zip(*qargs):
+            yield list(arg), []
 
     def broadcast_arguments(self, qargs: list, cargs: list) -> Iterable[tuple[list, list]]:
         """Validation and handling of the arguments and its relationship.
@@ -202,10 +199,10 @@ class Gate(Instruction):
                 f" not match the gate expectation ({self.num_qubits})."
             )
 
-        if any(not qarg for qarg in qargs):
+        if not all(qargs):
             raise CircuitError("One or more of the arguments are empty")
 
-        if len(qargs) == 0:
+        if not qargs:
             return [
                 ([], []),
             ]

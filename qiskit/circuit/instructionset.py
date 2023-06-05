@@ -136,14 +136,15 @@ class InstructionSet:
                 of these may be passed, and it should be ``resource_requester``.
         """
         self._instructions: list[CircuitInstruction] = []
-        if circuit_cregs is not None:
-            if resource_requester is not None:
-                raise CircuitError("Cannot pass both 'circuit_cregs' and 'resource_requester'.")
+        if circuit_cregs is None:
+            self._requester = resource_requester
+
+        elif resource_requester is not None:
+            raise CircuitError("Cannot pass both 'circuit_cregs' and 'resource_requester'.")
+        else:
             self._requester: Callable[..., ClassicalRegister | Clbit] = _requester_from_cregs(
                 tuple(circuit_cregs)
             )
-        else:
-            self._requester = resource_requester
 
     def __len__(self):
         """Return number of instructions in set"""

@@ -115,10 +115,7 @@ class ADAM(Optimizer):
         if self._snapshot_dir:
 
             with open(os.path.join(self._snapshot_dir, "adam_params.csv"), mode="w") as csv_file:
-                if self._amsgrad:
-                    fieldnames = ["v", "v_eff", "m", "t"]
-                else:
-                    fieldnames = ["v", "m", "t"]
+                fieldnames = ["v", "v_eff", "m", "t"] if self._amsgrad else ["v", "m", "t"]
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
                 writer.writeheader()
 
@@ -173,10 +170,7 @@ class ADAM(Optimizer):
             load_dir: The directory containing ``adam_params.csv``.
         """
         with open(os.path.join(load_dir, "adam_params.csv")) as csv_file:
-            if self._amsgrad:
-                fieldnames = ["v", "v_eff", "m", "t"]
-            else:
-                fieldnames = ["v", "m", "t"]
+            fieldnames = ["v", "v_eff", "m", "t"] if self._amsgrad else ["v", "m", "t"]
             reader = csv.DictReader(csv_file, fieldnames=fieldnames)
             for line in reader:
                 v = line["v"]

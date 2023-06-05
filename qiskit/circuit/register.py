@@ -102,15 +102,13 @@ class Register:
 
         if not valid_size:
             raise CircuitError(
-                "Register size must be an integer. (%s '%s' was provided)"
-                % (type(size).__name__, size)
+                f"Register size must be an integer. ({type(size).__name__} '{size}' was provided)"
             )
         size = int(size)  # cast to int
 
         if size < 0:
             raise CircuitError(
-                "Register size must be non-negative (%s '%s' was provided)"
-                % (type(size).__name__, size)
+                f"Register size must be non-negative ({type(size).__name__} '{size}' was provided)"
             )
 
         # validate (or cast) name
@@ -181,13 +179,14 @@ class Register:
         """
         if not isinstance(key, (int, np.integer, slice, list)):
             raise CircuitError("expected integer or slice index into register")
-        if isinstance(key, slice):
-            return self._bits[key]
-        elif isinstance(key, list):  # list of qubit indices
-            if max(key) < len(self):
-                return [self._bits[idx] for idx in key]
-            else:
-                raise CircuitError("register index out of range")
+        if (
+            not isinstance(key, slice)
+            and isinstance(key, list)
+            and max(key) < len(self)
+        ):
+            return [self._bits[idx] for idx in key]
+        elif not isinstance(key, slice) and isinstance(key, list):
+            raise CircuitError("register index out of range")
         else:
             return self._bits[key]
 
@@ -227,19 +226,17 @@ class Register:
         if self is other:
             return True
 
-        res = False
-        if (
+        return (
             type(self) is type(other)
             and self._repr == other._repr
             and all(
                 # For new-style bits, check bitwise equality.
                 sbit == obit
                 for sbit, obit in zip(self, other)
-                if None in (sbit._register, sbit._index, obit._register, obit._index)
+                if None
+                in (sbit._register, sbit._index, obit._register, obit._index)
             )
-        ):
-            res = True
-        return res
+        )
 
     def __hash__(self):
         """Make object hashable, based on the name and size to hash."""

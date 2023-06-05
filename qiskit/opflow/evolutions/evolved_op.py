@@ -62,10 +62,9 @@ class EvolvedOp(PrimitiveOp):
         return self.primitive.num_qubits
 
     def add(self, other: OperatorBase) -> Union["EvolvedOp", SummedOp]:
-        if not self.num_qubits == other.num_qubits:
+        if self.num_qubits != other.num_qubits:
             raise ValueError(
-                "Sum over operators with different numbers of qubits, {} and {}, is not well "
-                "defined".format(self.num_qubits, other.num_qubits)
+                f"Sum over operators with different numbers of qubits, {self.num_qubits} and {other.num_qubits}, is not well defined"
             )
 
         if isinstance(other, EvolvedOp) and self.primitive == other.primitive:
@@ -81,7 +80,7 @@ class EvolvedOp(PrimitiveOp):
         return EvolvedOp(self.primitive.adjoint() * -1, coeff=self.coeff.conjugate())
 
     def equals(self, other: OperatorBase) -> bool:
-        if not isinstance(other, EvolvedOp) or not self.coeff == other.coeff:
+        if not isinstance(other, EvolvedOp) or self.coeff != other.coeff:
             return False
 
         return self.primitive == other.primitive

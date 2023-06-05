@@ -340,13 +340,13 @@ class VQD(VariationalAlgorithm, Eigensolver):
     def setting(self):
         """Prepare the setting of VQD as a string."""
         ret = f"Algorithm: {self.__class__.__name__}\n"
-        params = ""
-        for key, value in self.__dict__.items():
-            if key[0] == "_":
-                if "initial_point" in key and value is None:
-                    params += "-- {}: {}\n".format(key[1:], "Random seed")
-                else:
-                    params += f"-- {key[1:]}: {value}\n"
+        params = "".join(
+            f"-- {key[1:]}: Random seed\n"
+            if "initial_point" in key and value is None
+            else f"-- {key[1:]}: {value}\n"
+            for key, value in self.__dict__.items()
+            if key[0] == "_"
+        )
         ret += f"{params}"
         return ret
 
@@ -356,9 +356,9 @@ class VQD(VariationalAlgorithm, Eigensolver):
         Returns:
             str: the formatted setting of VQD.
         """
-        ret = "\n"
-        ret += "==================== Setting of {} ============================\n".format(
-            self.__class__.__name__
+        ret = (
+            "\n"
+            + f"==================== Setting of {self.__class__.__name__} ============================\n"
         )
         ret += f"{self.setting}"
         ret += "===============================================================\n"
@@ -418,10 +418,7 @@ class VQD(VariationalAlgorithm, Eigensolver):
         ansatz_circuit_op = CircuitStateFn(wave_function)
         expect_op = observable_meas.compose(ansatz_circuit_op).reduce()
 
-        if return_expectation:
-            return expect_op, expectation
-
-        return expect_op
+        return (expect_op, expectation) if return_expectation else expect_op
 
     def construct_circuit(
         self,
@@ -701,8 +698,7 @@ class VQD(VariationalAlgorithm, Eigensolver):
 
         if step > 1 and (len(prev_states) + 1) != step:
             raise RuntimeError(
-                f"Passed previous states of the wrong size."
-                f"Passed array has length {str(len(prev_states))}"
+                f"Passed previous states of the wrong size.Passed array has length {len(prev_states)}"
             )
 
         self._check_operator_ansatz(operator)
@@ -753,12 +749,11 @@ class VQD(VariationalAlgorithm, Eigensolver):
         """Get the simulation outcome of the ansatz, provided with parameters."""
         optimal_circuit = self.ansatz.bind_parameters(optimal_parameters)
         state_fn = self._circuit_sampler.convert(StateFn(optimal_circuit)).eval()
-        if self.quantum_instance.is_statevector:
-            state = state_fn.primitive.data  # VectorStateFn -> Statevector -> np.array
-        else:
-            state = state_fn.to_dict_fn().primitive  # SparseVectorStateFn -> DictStateFn -> dict
-
-        return state
+        return (
+            state_fn.primitive.data
+            if self.quantum_instance.is_statevector
+            else state_fn.to_dict_fn().primitive
+        )
 
 
 class VQDResult(VariationalResult, EigensolverResult):

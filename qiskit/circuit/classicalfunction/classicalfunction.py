@@ -90,10 +90,7 @@ class ClassicalFunction(ClassicalElement):
             list(dict): A list of scopes as dicts, where key is the variable name and
             value is its type.
         """
-        ret = []
-        for scope in self.scopes:
-            ret.append({k: v[0] for k, v in scope.items()})
-        return ret
+        return [{k: v[0] for k, v in scope.items()} for scope in self.scopes]
 
     def simulate(self, bitstring: str) -> bool:
         """Evaluate the expression on a bitstring.
@@ -117,11 +114,10 @@ class ClassicalFunction(ClassicalElement):
         Returns:
             str: a bitstring with a truth table
         """
-        result = []
-        for position in range(2 ** self._network.num_pis()):
-            sim_result = "".join([str(int(tt[position])) for tt in self.truth_table])
-            result.append(sim_result)
-
+        result = [
+            "".join([str(int(tt[position])) for tt in self.truth_table])
+            for position in range(2 ** self._network.num_pis())
+        ]
         return "".join(reversed(result))
 
     @property
@@ -148,11 +144,7 @@ class ClassicalFunction(ClassicalElement):
         Returns:
             QuantumCircuit: A circuit implementing the logic network.
         """
-        if registerless:
-            qregs = None
-        else:
-            qregs = self.qregs
-
+        qregs = None if registerless else self.qregs
         if synthesizer:
             return synthesizer(self)
 

@@ -70,13 +70,11 @@ def _assemble_circuit(
     creg_sizes = []
     for qreg in circuit.qregs:
         qreg_sizes.append([qreg.name, qreg.size])
-        for j in range(qreg.size):
-            qubit_labels.append([qreg.name, j])
+        qubit_labels.extend([qreg.name, j] for j in range(qreg.size))
         num_qubits += qreg.size
     for creg in circuit.cregs:
         creg_sizes.append([creg.name, creg.size])
-        for j in range(creg.size):
-            clbit_labels.append([creg.name, j])
+        clbit_labels.extend([creg.name, j] for j in range(creg.size))
         memory_slots += creg.size
 
     qubit_indices = {qubit: idx for idx, qubit in enumerate(circuit.qubits)}
@@ -120,12 +118,9 @@ def _assemble_circuit(
     for op_context in circuit.data:
         instruction = op_context.operation.assemble()
 
-        # Add register attributes to the instruction
-        qargs = op_context.qubits
-        cargs = op_context.clbits
-        if qargs:
+        if qargs := op_context.qubits:
             instruction.qubits = [qubit_indices[qubit] for qubit in qargs]
-        if cargs:
+        if cargs := op_context.clbits:
             instruction.memory = [clbit_indices[clbit] for clbit in cargs]
             # If the experiment has conditional instructions, assume every
             # measurement result may be needed for a conditional gate.
@@ -143,9 +138,9 @@ def _assemble_circuit(
                 mask = 1 << clbit_indices[ctrl_reg]
                 val = (ctrl_val & 1) << clbit_indices[ctrl_reg]
             else:
-                for clbit in clbit_indices:
+                for clbit, value in clbit_indices.items():
                     if clbit in ctrl_reg:
-                        mask |= 1 << clbit_indices[clbit]
+                        mask |= 1 << value
                         val |= ((ctrl_val >> list(ctrl_reg).index(clbit)) & 1) << clbit_indices[
                             clbit
                         ]
@@ -340,7 +335,7 @@ def assemble_circuits(
     for exp, lib in experiments_and_pulse_libs:
         experiments.append(exp)
         if lib:
-            pulse_library.update(lib)
+            pulse_library |= lib
 
     # extract common calibrations
     experiments, calibrations = _extract_common_calibrations(experiments)
@@ -371,12 +366,9 @@ def assemble_circuits(
         schedule_los = qobj_config_dict.pop("schedule_los", [])
         if len(schedule_los) == 1:
             lo_dict = schedule_los[0]
-            q_los = lo_converter.get_qubit_los(lo_dict)
-            # Hz -> GHz
-            if q_los:
+            if q_los := lo_converter.get_qubit_los(lo_dict):
                 qobj_config_dict["qubit_lo_freq"] = [freq / 1e9 for freq in q_los]
-            m_los = lo_converter.get_meas_los(lo_dict)
-            if m_los:
+            if m_los := lo_converter.get_meas_los(lo_dict):
                 qobj_config_dict["meas_lo_freq"] = [freq / 1e9 for freq in m_los]
 
         qobj_config = QasmQobjConfig(**qobj_config_dict)
@@ -384,12 +376,8 @@ def assemble_circuits(
     qubit_sizes = []
     memory_slot_sizes = []
     for circ in circuits:
-        num_qubits = 0
-        memory_slots = 0
-        for qreg in circ.qregs:
-            num_qubits += qreg.size
-        for creg in circ.cregs:
-            memory_slots += creg.size
+        num_qubits = sum(qreg.size for qreg in circ.qregs)
+        memory_slots = sum(creg.size for creg in circ.cregs)
         qubit_sizes.append(num_qubits)
         memory_slot_sizes.append(memory_slots)
     qobj_config.memory_slots = max(memory_slot_sizes)

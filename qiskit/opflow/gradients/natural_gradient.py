@@ -175,28 +175,26 @@ class NaturalGradient(GradientBase):
         if regularization is not None:
             # If a regularization method is chosen then use a regularized solver to
             # construct the natural gradient.
-            nat_grad = NaturalGradient._regularized_sle_solver(
+            return NaturalGradient._regularized_sle_solver(
                 metric, gradient, regularization=regularization
             )
-        else:
-            # Check if numerical instabilities lead to a metric which is not positive semidefinite
-            w, v = np.linalg.eigh(metric)
+        # Check if numerical instabilities lead to a metric which is not positive semidefinite
+        w, v = np.linalg.eigh(metric)
 
-            if not all(ew >= (-1) * ETOL for ew in w):
-                raise ValueError(
-                    f"The underlying metric has at least one Eigenvalue < -{ETOL}. "
-                    f"The smallest Eigenvalue is {np.amin(w)} "
-                    "Please use a regularized least-square solver for this problem or "
-                    "increase the number of backend shots.",
-                )
-            if not all(ew >= 0 for ew in w):
-                # If not all eigenvalues are non-negative, set them to a small positive
-                # value
-                w = [max(ETOL, ew) for ew in w]
-                # Recompose the adapted eigenvalues with the eigenvectors to get a new metric
-                metric = np.real(v @ np.diag(w) @ np.linalg.inv(v))
-            nat_grad = np.linalg.lstsq(metric, gradient, rcond=RCOND)[0]
-        return nat_grad
+        if any(ew < (-1) * ETOL for ew in w):
+            raise ValueError(
+                f"The underlying metric has at least one Eigenvalue < -{ETOL}. "
+                f"The smallest Eigenvalue is {np.amin(w)} "
+                "Please use a regularized least-square solver for this problem or "
+                "increase the number of backend shots.",
+            )
+        if any(ew < 0 for ew in w):
+            # If not all eigenvalues are non-negative, set them to a small positive
+            # value
+            w = [max(ETOL, ew) for ew in w]
+            # Recompose the adapted eigenvalues with the eigenvectors to get a new metric
+            metric = np.real(v @ np.diag(w) @ np.linalg.inv(v))
+        return np.linalg.lstsq(metric, gradient, rcond=RCOND)[0]
 
     @property
     def qfi_method(self) -> CircuitQFI:
@@ -534,10 +532,10 @@ class NaturalGradient(GradientBase):
 
         if np.linalg.norm(x) > tol_norm_x[1] or np.linalg.norm(x) < tol_norm_x[0]:
             if regularization == "ridge":
-                lambda1 = lambda1 / 10.0
+                lambda1 /= 10.0
                 _, x = NaturalGradient._ridge(metric, gradient, lambda1=lambda1, lambda4=lambda4)
             elif regularization == "lasso":
-                lambda1 = lambda1 / 10.0
+                lambda1 /= 10.0
                 _, x = NaturalGradient._lasso(metric, gradient, lambda1=lambda1)
             elif regularization == "perturb_diag_elements":
                 while np.linalg.cond(metric + alpha * np.diag(metric)) > tol_cond_a:

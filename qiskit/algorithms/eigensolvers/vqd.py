@@ -373,8 +373,7 @@ class VQD(VariationalAlgorithm, Eigensolver):
 
         if step > 1 and (len(prev_states) + 1) != step:
             raise RuntimeError(
-                f"Passed previous states of the wrong size."
-                f"Passed array has length {str(len(prev_states))}"
+                f"Passed previous states of the wrong size.Passed array has length {len(prev_states)}"
             )
 
         self._check_operator_ansatz(operator)

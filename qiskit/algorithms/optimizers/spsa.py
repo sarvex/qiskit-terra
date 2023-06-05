@@ -518,11 +518,7 @@ class SPSA(Optimizer):
             )
         eta, eps = get_eta(), get_eps()
 
-        if self.lse_solver is None:
-            lse_solver = np.linalg.solve
-        else:
-            lse_solver = self.lse_solver
-
+        lse_solver = np.linalg.solve if self.lse_solver is None else self.lse_solver
         # prepare some initials
         x = np.asarray(x0)
         if self.initial_hessian is None:
